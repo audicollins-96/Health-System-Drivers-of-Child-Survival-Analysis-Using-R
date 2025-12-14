@@ -1,0 +1,169 @@
+
+---
+title: "Multiple Comparisons in ANOVA"
+author: "Collins Audi"
+date: "2025-12-04"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**Background of this Data Analysis Project:**: Under-5 mortality is a significant indicator of socio-economic development. Since 1990, the under-5 mortality has reduced by half, corresponding with periods of economic growth in developing countries (World Bank, 2023; UNICEF, 2023). Most studies have found a strong negative correlation between income levels of countries with child mortality (Preston, 1975; O’Hare & Whitley, 2013). However, this relationship differs across contexts, as some studies find that some countries with similar Gross Domestic Product have different child mortality outcomes (Houweling et al., 2005; Our World in Data, 2023). Systemic factors play a major role and Sub-Saharan Africa tend to have higher child mortality than other regions with comparable income levels. Therefore, economic growth alone does not guarantee improved child outcomes. Other factors such as immunization coverage, access to clean water and sanitation, maternal education and significant investments in primary healthcare services. These findings leave us with the question: To what extent is economic growth associated with child mortality within countries and how do health system indicators correlate with differences in child mortality at similar income levels?
+
+**Specific Questions**
+1.	Do richer countries have lower under-5 mortality?
+2.	Does child mortality decline when a country’s GDP per capita increases?
+3.	Are health system factors (immunization, water access and health spending) associated with deviations from expected mortality at different income levels?
+
+Data sources
+•	Under-5 Mortality Data: World Bank
+•	GDP Per Capita: Our World in Data
+•	Immunization Coverage: Our World in Data
+•	Health Expenditure Per Capita: Our World in Data
+•	Access to Clean Water and Sanitation: Our World in Data
+
+
+```{r}
+#Importing and managing the first data set by UNICEF: Under 5 mortality data
+under_5_mortality <-read.csv("C:/Users/audic/Documents/GitHub/Beyond-GDP-Health-System-Drivers-of-Child-Survival/under_five_mortality.csv", header = TRUE, sep =',')
+under_5_mortality
+
+library(dplyr)
+library(tidyr)
+library(stringr)
+
+colnames(under_5_mortality) <- str_trim(colnames(under_5_mortality))   # remove leading/trailing spaces
+
+under_5_mortality <- under_5_mortality[, 1:37] %>%
+  filter(bound == "Median") %>%   # keep only Median rows
+  rename_with(~ gsub("^X", "", .x), 5:37)   # remove 'X' prefix from columns 5 to 37
+
+# Step 1: Keeping only Median rows necessary, leaving upper and lower boundaries since our interest is in modelling.
+
+under_5_mortality
+
+colnames(under_5_mortality)
+
+# Step 2: Pivot year columns into long format
+under_5_mortality <- under_5_mortality %>%
+  pivot_longer(
+    cols = 5:37,
+    names_to = "year",
+    values_to = "mortality_r",
+  ) %>%
+  mutate(year        =  as.integer(year),
+         mortality_r =  round(mortality_r, 1))
+
+under_5_mortality
+# Step 3: View the result
+
+
+```
+**Importing other datasets**
+Importing other data sets - immunization, access to clean water and healthcare expenditure (with GDP per-capita data).
+```{r}
+#Importing and managing the immunization data set
+immunisation <-read.csv("C:/Users/audic/Documents/GitHub/Beyond-GDP-Health-System-Drivers-of-Child-Survival/immunisation.csv", header = TRUE, sep =',')
+
+#Rounding off immunization coverage data to one decimal place
+immunisation  <- immunisation %>%
+  mutate(dpt_coverage = round(dpt_coverage, 1))
+
+immunisation
+
+#Importing and managing the healthcare expenditure data set
+h_expenditure <-read.csv("C:/Users/audic/Documents/GitHub/Beyond-GDP-Health-System-Drivers-of-Child-Survival/healthcare_expenditure.csv", header = TRUE, sep =',')
+
+#Rounding off health expenditure per capita and gdp per capita columns  to one decimal place
+
+h_expenditure <- h_expenditure %>%
+  mutate(
+    h_exp_percapita = round(h_exp_percapita, 1),   
+    gdp_percapita  = round(gdp_percapita, 1))
+
+h_expenditure
+
+#Importing and managing the access to WASH (access to clean water) data set
+wash <-read.csv("C:/Users/audic/Documents/GitHub/Beyond-GDP-Health-System-Drivers-of-Child-Survival/wash.csv", header = TRUE, sep =',')
+wash
+
+wash <- wash %>%
+  mutate(
+    wash_access = round(wash_access, 1))
+wash
+```
+
+
+**Importing other datasets**
+Importing other data sets - immunization, access to clean water and healthcare expenditure (with GDP per-capita data).
+```{r}
+#Merging the datasets into a master dataset using iso_code and year columns, enabled by the left_join function
+merged_df <- under_5_mortality %>%
+  left_join(immunisation,  by = c("iso_code", "year")) %>%
+  left_join(wash,          by = c("iso_code", "year")) %>%
+  left_join(h_expenditure, by = c("iso_code", "year"))
+
+
+merged_df <- merged_df %>%
+  select(
+    -country.y,
+    -country.x.x,
+    -bound,
+    -country.y.y,
+    country = country.x) %>%
+  filter(if_all(where(is.numeric), ~ !is.na(.)))
+
+  
+merged_df
+
+sapply(merged_df, class)
+
+write.csv(merged_df, "merged_data.csv", row.names = FALSE)
+
+#Now, we want to see the number of countries which have different year ranges 2000-2022 and 2001-2022
+#Step 1: Count the years available per country
+country_years <- merged_df %>%
+  group_by(iso_code, country) %>% # 1️⃣ Group the data by country
+  summarise(
+    min_year = min(year),         # 2️⃣ Earliest year for that country
+    max_year = max(year),         # 3️⃣ Latest year for that country
+    n_years  = n_distinct(year)   # 4️⃣ Count of unique years
+  ) %>%
+  ungroup() 
+#group_by(iso_code, country.x) → ensures calculations are done separately for each country.
+#min(year) → finds the earliest year recorded for that country.
+#max(year) → finds the latest year recorded.
+#n_distinct(year) → counts how many unique years exist for that country.
+#ungroup() → removes grouping so we can do further operations easily.
+
+#Step 2: Define the expected full year range
+expected_years <- 2000:2022           # 1️⃣ Full range of years
+n_expected <- length(expected_years)  # 2️⃣ How many years: 23
+
+#Step 3: Check which countries have full 2000–2022 coverage
+country_years <- country_years %>%
+  mutate(
+    full_2000_2022 = (min_year == 2000 & max_year == 2022 & n_years == n_expected))
+
+#mutate() → adds a new column
+#full_2000_2022 → TRUE if all conditions met:
+#Earliest year = 2000
+#Latest year = 2022
+#Total number of years = 23
+#FALSE → country is missing some years
+
+#Step 4
+```
+
+
+
+
+
+
+
+
+
