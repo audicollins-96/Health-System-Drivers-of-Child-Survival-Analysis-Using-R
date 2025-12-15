@@ -125,7 +125,7 @@ sapply(merged_df, class)
 write.csv(merged_df, "merged_data.csv", row.names = FALSE)
 
 #Now, we want to see the number of countries which have different year ranges 2000-2022 and 2001-2022
-#Step 1: Count the years available per country
+#Step 1: Counting the years available per country
 country_years <- merged_df %>%
   group_by(iso_code, country) %>% # 1️⃣ Group the data by country
   summarise(
@@ -140,11 +140,11 @@ country_years <- merged_df %>%
 #n_distinct(year) → counts how many unique years exist for that country.
 #ungroup() → removes grouping so we can do further operations easily.
 
-#Step 2: Define the expected full year range
+#Step 2: Defining the expected full year range
 expected_years <- 2000:2022           # 1️⃣ Full range of years
 n_expected <- length(expected_years)  # 2️⃣ How many years: 23
 
-#Step 3: Check which countries have full 2000–2022 coverage
+#Step 3: Checking which countries have full 2000–2022 coverage
 country_years <- country_years %>%
   mutate(
     full_2000_2022 = (min_year == 2000 & max_year == 2022 & n_years == n_expected))
@@ -156,12 +156,279 @@ country_years <- country_years %>%
 #Total number of years = 23
 #FALSE → country is missing some years
 
-#Step 4
+#Step 4: Counting how many countries have full or partial coverage
+country_years %>%
+  summarise(
+    full_range = sum(full_2000_2022),         # 1️⃣ Count TRUEs → complete countries
+    partial_or_missing = sum(!full_2000_2022) # 2️⃣ Count FALSEs → incomplete countries
+  )
+
 ```
 
+```{r}
+library(dplyr)
+library(ggplot2)
+library(plotly)
+library(scales)
+library(gganimate)
+
+# ----------------------------
+# Data Cleaning
+# ----------------------------
+merged_df$country <- iconv(merged_df$country, from = "", to = "UTF-8", sub = "")  # Fix encoding
+merged_df$country <- trimws(merged_df$country)                                  # Remove spaces
+merged_df$country <- as.character(merged_df$country)                             # Ensure character type
+merged_df <- merged_df %>% filter(!is.na(mortality_r) & country != "")           # Remove rows with NA mortality
+
+# ----------------------------
+# Select Top & Bottom 10 (latest available year per country)
+# ----------------------------
+top_bottom <- merged_df %>%
+  group_by(country) %>%
+  filter(year == max(year)) %>%     # Take latest available year for each country
+  ungroup() %>%
+  arrange(mortality_r) %>%          # Sort ascending
+  slice_head(n = 10) %>%            # Take 10 countries with lowest mortality
+  bind_rows(
+    merged_df %>%
+      group_by(country) %>%
+      filter(year == max(year)) %>%
+      ungroup() %>%
+      arrange(desc(mortality_r)) %>% # Sort descending
+      slice_head(n = 10)             # Take 10 countries with highest mortality
+  )
+
+# Reset factor levels to avoid NA in plot
+top_bottom$country <- factor(top_bottom$country, levels = top_bottom$country)
+
+# ----------------------------
+# Plot with Data Labels
+# ----------------------------
+ggplot(top_bottom, aes(x = reorder(country, mortality_r), y = mortality_r, fill = mortality_r)) +
+  geom_col() +                                          # Draw bars
+  geom_text(aes(label = round(mortality_r, 1)),        # Add mortality values on bars
+            hjust = -0.1, size = 3) +                  # Slightly outside bar
+  coord_flip() +                                       # Horizontal bars
+  scale_fill_gradient(low = "green", high = "red") +  # Color gradient
+  labs(title = "Top & Bottom 10 Countries: Under-5 Mortality (Latest Year)",
+       subtitle = "Mortality per 1,000 live births",
+       x = "", y = "Mortality Rate (per 1,000)") +
+  theme_minimal()                                      # Clean theme
 
 
+library(dplyr)
+library(ggplot2)
 
+
+# By SDG region
+ggplot(merged_df, aes(x=year, y=mortality_r, color=sdg_region)) +
+  stat_summary(fun=mean, geom="line") +
+  theme_minimal() +
+  labs(title="Average Mortality Rate Over Time by SDG Region",
+       x="Year",
+       y="Mortality Rate")
+
+# By country (top 5 countries with most data)
+top_countries <- merged_df %>% 
+  count(country) %>% 
+  slice_max(n, n = 5) %>% 
+  pull(country)
+
+df_top <- merged_df %>% filter(country %in% top_countries)
+
+ggplot(df_top, aes(x=year, y=mortality_r, color=country)) +
+  geom_line() +
+  theme_minimal() +
+  labs(title="Mortality Rate Trends for Top 5 Countries",
+       x="Year",
+       y="Mortality Rate")
+
+# =========================================
+# Animated Bubble Chart: Under-5 Mortality vs GDP
+# Bubble size = Health Expenditure per Capita
+# Dark theme + slow animation (~4 seconds per year)
+# =========================================
+
+library(ggplot2)
+library(dplyr)
+library(scales)
+library(plotly)
+library(htmlwidgets)
+
+# ----------------------------
+# 1️⃣ Prepare Data (ALL YEARS)
+# ----------------------------
+anim_df <- merged_df %>%
+  filter(
+    !is.na(gdp_percapita),
+    !is.na(mortality_r),
+    !is.na(h_exp_percapita),
+    !is.na(country),
+    year >= 2000,
+    year <= 2022
+  )
+
+# ----------------------------
+# 2️⃣ Create ggplot (Animated)
+# ----------------------------
+p <- ggplot(anim_df, aes(
+  x = gdp_percapita,
+  y = mortality_r,
+  color = country,
+  size  = h_exp_percapita,
+  frame = year,
+  text = paste(
+    "Country:", country,
+    "<br>Year:", year,
+    "<br>GDP per Capita:", dollar(gdp_percapita),
+    "<br>Under-5 Mortality:", round(mortality_r, 1),
+    "<br>Health Expenditure per Capita:", dollar(h_exp_percapita)
+  )
+)) +
+  geom_point(alpha = 0.85) +
+  scale_x_continuous(
+    trans = "log10",
+    limits = c(500, 150000),
+    breaks = c(1000, 4000, 16000, 64000),
+    labels = comma
+  ) +
+  scale_y_continuous(
+    limits = c(0, max(anim_df$mortality_r, na.rm = TRUE) + 20)
+  ) +
+  scale_size(range = c(4, 25), guide = "none") +
+  labs(
+    x = "GDP per capita (log scale, PPP)",
+    y = "Under-5 Mortality (per 1,000 live births)",
+    color = "Country",
+    title = "Under-5 Mortality vs GDP per Capita (2000–2022)"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.background  = element_rect(fill = "black", color = NA),
+    panel.background = element_rect(fill = "black", color = NA),
+    legend.background = element_rect(fill = "black"),
+    legend.key = element_rect(fill = "black"),
+    text = element_text(color = "white"),
+    axis.text = element_text(color = "white"),
+    axis.title = element_text(color = "white", face = "bold"),
+    panel.grid.major = element_line(color = "gray30", linetype = "dotted"),
+    panel.grid.minor = element_blank()
+  )
+
+# ----------------------------
+# 3️⃣ Convert to Plotly (SLOW animation)
+# ----------------------------
+interactive_anim <- ggplotly(p, tooltip = "text") %>%
+  animation_opts(
+    frame = 4000,      # ⏱️ 4 seconds per year
+    transition = 4000,
+    easing = "linear",
+    redraw = FALSE
+  )
+
+# ----------------------------
+# 4️⃣ Display
+# ----------------------------
+interactive_anim
+
+# ----------------------------
+# 5️⃣ Save as HTML
+# ----------------------------
+saveWidget(
+  interactive_anim,
+  "under5_mortality_vs_gdp_slow_dark.html",
+  selfcontained = TRUE
+)
+
+
+```
+**Animation by region**
+
+```{r}
+# ----------------------------
+# 6️⃣ Add Interactive Filters (Region, Country, Year)
+# ----------------------------
+
+# Get unique values
+regions   <- sort(unique(anim_df$sdg_region))
+countries <- sort(unique(anim_df$country))
+years     <- sort(unique(anim_df$year))
+
+# Helper: create filter buttons
+make_buttons <- function(values, column) {
+  c(
+    list(
+      list(
+        method = "restyle",
+        args = list("transforms[0].value", values),
+        label = "All"
+      )
+    ),
+    lapply(values, function(v) {
+      list(
+        method = "restyle",
+        args = list("transforms[0].value", v),
+        label = v
+      )
+    })
+  )
+}
+
+interactive_anim <- interactive_anim %>%
+  layout(
+    updatemenus = list(
+      # 🔹 Region filter
+      list(
+        type = "dropdown",
+        direction = "down",
+        x = 0.02,
+        y = 1.15,
+        showactive = TRUE,
+        bgcolor = "black",
+        font = list(color = "white"),
+        buttons = make_buttons(regions, "sdg_region")
+      ),
+
+      # 🔹 Country filter
+      list(
+        type = "dropdown",
+        direction = "down",
+        x = 0.30,
+        y = 1.15,
+        showactive = TRUE,
+        bgcolor = "black",
+        font = list(color = "white"),
+        buttons = make_buttons(countries, "country")
+      )
+    ),
+
+    annotations = list(
+      list(
+        text = "<b>Filter by Region</b>",
+        x = 0.02, y = 1.22, xref = "paper", yref = "paper",
+        showarrow = FALSE,
+        font = list(color = "white")
+      ),
+      list(
+        text = "<b>Filter by Country</b>",
+        x = 0.30, y = 1.22, xref = "paper", yref = "paper",
+        showarrow = FALSE,
+        font = list(color = "white")
+      )
+    )
+  ) %>%
+  style(
+    transforms = list(
+      list(
+        type = "filter",
+        target = ~sdg_region,
+        operation = "in",
+        value = regions
+      )
+    )
+  )
+
+```
 
 
 
