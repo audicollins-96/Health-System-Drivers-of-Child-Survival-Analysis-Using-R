@@ -1,6 +1,6 @@
 
 ---
-title: "Multiple Comparisons in ANOVA"
+title: "Economic Growth and Health System Factors in Global Child Mortality"
 author: "Collins Audi"
 date: "2025-12-04"
 output:
@@ -12,20 +12,41 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-**Background of this Data Analysis Project:**: Under-5 mortality is a significant indicator of socio-economic development. Since 1990, the under-5 mortality has reduced by half, corresponding with periods of economic growth in developing countries (World Bank, 2023; UNICEF, 2023). Most studies have found a strong negative correlation between income levels of countries with child mortality (Preston, 1975; O’Hare & Whitley, 2013). However, this relationship differs across contexts, as some studies find that some countries with similar Gross Domestic Product have different child mortality outcomes (Houweling et al., 2005; Our World in Data, 2023). Systemic factors play a major role and Sub-Saharan Africa tend to have higher child mortality than other regions with comparable income levels. Therefore, economic growth alone does not guarantee improved child outcomes. Other factors such as immunization coverage, access to clean water and sanitation, maternal education and significant investments in primary healthcare services. These findings leave us with the question: To what extent is economic growth associated with child mortality within countries and how do health system indicators correlate with differences in child mortality at similar income levels?
+**BACKGROUND AND PURPOSE OF THIS HEALTH DATA ANALYSIS PROJECT**
 
-**Specific Questions**
-1.	Do richer countries have lower under-5 mortality?
-2.	Does child mortality decline when a country’s GDP per capita increases?
-3.	Are health system factors (immunization, water access and health spending) associated with deviations from expected mortality at different income levels?
+Reducing the number of children who die before their fifth birthday is a core target within the sustainable development goal three of health and well-being and is a sign of a country’s human development index. Previously, the Preston curve showed a strong correlation between a country’s per capita income and under-5 deaths (Preston, 1975): whereby higher income levels are associated with lower under-five mortality.  Globally, the under-5 mortality has reduced by more than half from 94 per 1000 live births in 1990 to 37 per 1000 live births in 2023 (World Bank, 2023). This reduction can be attributed to economic growth and global health programs. 
 
-Data sources
-•	Under-5 Mortality Data: World Bank
-•	GDP Per Capita: Our World in Data
-•	Immunization Coverage: Our World in Data
-•	Health Expenditure Per Capita: Our World in Data
-•	Access to Clean Water and Sanitation: Our World in Data
+However, economic growth alone is not enough to protect children unless significant investments are made in healthcare. Often, countries with comparable income levels differ in child survival outcomes because of differences in how their systems work and the amounts of investments made in health. (Houeling et al, 2005; Our World in Data, 2023). The purpose of this data analysis project is to analyze at the relationship between under-5 mortality and Gross Domestic Product (GDP) per capita (adjusted for inflation and cost of living by Our World in Data, 2023) and systemic factors like vaccination coverage, access to clean water and sanitation and healthcare while looking at the regional differences. Here are the research/data analysis questions: 
 
+   1.	To what extent is a country’s GDP per capita associated with its under-five mortality rate (per 1000 live births) and does the link get weaker as countries get richer?
+   2.	How much are systemic factors such as vaccination coverage, access to clean water and sanitation and healthcare investment (as a % of GDP) associated with a country’s under-five mortality rate (per 1000 live births)
+   
+**Variables per country (2000-2002)**
+    •	Under_5 mortality rate 
+    •	Access to water and sanitation 
+    •	Healthcare investment (as a % of GDP)
+    •	GDP Per Capita (adjusted by Our World in Data to reflect living costs and inflation)
+    •	Under-5 population size
+
+  **Sources of Data**
+     •	Our World in Data
+     •	UNICEF
+     •	World Bank
+     
+**STEP 1: IMPORTING, CLEANING AND MANIPULATING THE FIRST DATASET: GLOBAL UNDER_5 MORTALITY DATA**
+
+**Step 1-Phase 1: Preparing the Mortality Data**
+My first task was to take the raw mortality records from UNICEF and transform them into a format that works for statistical analysis. I followed these four steps:
+
+**i. Importing the Data**: I loaded the UNICEF under 5 mortality file and performed an initial clean to remove any hidden spaces in the text that could cause errors later.
+
+**ii. Selecting the Best Estimates**: The raw file contains three different numbers for every country: a high, low, and median estimate. I filtered the data to keep only the Median rows. This ensures my analysis is based on the most likely figures while removing unnecessary noise.
+
+***iii. Cleaning Column Names***: When R imports data, it often adds an "X" in front of years (like X2000). I stripped these "X" prefixes away so the year columns would be clean and easy to read.
+
+***iv. Reshaping for Analysis (The "Pivot")***: Most importantly, I changed the data from a "wide" layout to a "long" layout. Instead of having 30 separate columns for different years, I collapsed them into two columns: Year and Mortality Rate.
+
+**v. The Result**: By the end of this step, I had a clean, vertical timeline for every country. This consistent structure is what allows me to merge the mortality data with other factors like wealth and health spending for the next part of my story.
 
 ```{r}
 #Importing and managing the first data set by UNICEF: Under 5 mortality data
@@ -63,8 +84,17 @@ under_5_mortality
 
 
 ```
-**Importing other datasets**
-Importing other data sets - immunization, access to clean water and healthcare expenditure (with GDP per-capita data).
+**Step 1-Phase 2: Importing the Health and Economic Indicators**
+
+To build a complete picture of the factors influencing under 5 mortality, I imported and processed five additional datasets. I followed these steps for each one:
+
+**i. Importing the Key Variables**: I loaded datasets for Vaccine Coverage (DPT shots), Healthcare Expenditure (as a percentage of GDP), GDP per capita, WASH Access (clean water and sanitation), and the total Under 5 Population.
+
+**ii. Standardizing the Values**: To ensure the data was precise but easy to read, I applied a rounding function to all numeric columns. I rounded the percentages for vaccines and WASH, as well as the dollar amounts for GDP, to one decimal place.
+
+**iii. Data Alignment**: Each of these files was checked to ensure they contained the necessary country and year information. This allows these specific health and economic indicators to be matched perfectly with the mortality data I prepared in Phase 1.
+
+**The Result**: By the end of this phase, I had a collection of clean, standardized tables. Each table represents a different "piece of the puzzle"—from a country's total wealth and population size to its specific investments in health and infrastructure. These are now ready to be combined into a single master dataset.
 ```{r}
 #Importing and managing the immunization data set
 immunisation <-read.csv("C:/Users/audic/Documents/GitHub/Beyond-GDP-Health-System-Drivers-of-Child-Survival/immunisation.csv", header = TRUE, sep =',')
@@ -75,50 +105,73 @@ immunisation  <- immunisation %>%
 
 immunisation
 
-#Importing and managing the healthcare expenditure data set
+#Importing and managing the healthcare expenditure data set as a % of GDP
 h_expenditure <-read.csv("C:/Users/audic/Documents/GitHub/Beyond-GDP-Health-System-Drivers-of-Child-Survival/healthcare_expenditure.csv", header = TRUE, sep =',')
 
-#Rounding off health expenditure per capita and gdp per capita columns  to one decimal place
-
+#Rounding off health expenditure per capita figures to one decimal place
 h_expenditure <- h_expenditure %>%
-  mutate(
-    h_exp_percapita = round(h_exp_percapita, 1),   
-    gdp_percapita  = round(gdp_percapita, 1))
+  mutate(health_exp_perc_gdp = round(health_exp_perc_gdp, 1))
 
-h_expenditure
+#Importing gdp per capita data from Our World in Data
+gdp_per_capita <-read.csv("C:/Users/audic/Documents/GitHub/Beyond-GDP-Health-System-Drivers-of-Child-Survival/gdp.csv", header = TRUE, sep =',')
+gdp_per_capita
+
+#Rounding off gdp per capita to one decimal place
+gdp_per_capita <- gdp_per_capita %>%
+  mutate(gdp_percapita = round(gdp_percapita, 1))
 
 #Importing and managing the access to WASH (access to clean water) data set
 wash <-read.csv("C:/Users/audic/Documents/GitHub/Beyond-GDP-Health-System-Drivers-of-Child-Survival/wash.csv", header = TRUE, sep =',')
-wash
 
 wash <- wash %>%
   mutate(
     wash_access = round(wash_access, 1))
 wash
+
+#Importing Under 5 population data set
+under5_pop <- read.csv("C:/Users/audic/Documents/GitHub/Beyond-GDP-Health-System-Drivers-of-Child-Survival/population.csv", header = TRUE, sep =',')
+
+under5_pop
 ```
+**Step 1-Phase 3: Data Merging and Coverage Audit**
 
+In this final processing phase, I combined all individual datasets into one master file and conducted a thorough audit to check the quality of our timeline across different countries.
 
-**Importing other datasets**
-Importing other data sets - immunization, access to clean water and healthcare expenditure (with GDP per-capita data).
+**Merging into a Master Dataset**: Using a "left join" function, I connected the mortality data with the five other datasets (Vaccines, WASH, GDP, Population, and Health Spending). I used the unique Country Code and Year as the keys to ensure every piece of information aligned perfectly across all sources.
+
+**Cleaning the Combined Table**: After merging, the dataset contained several duplicate country name columns. I removed these extra columns and filtered the data to ensure that every row included the three most important variables for our bubble chart in the next exercise: GDP per capita, Mortality Rate, and Under 5 Population.
+
+**Auditing the Timeline**: I conducted an audit to see how consistent the timeline was across different nations. I compared every country against the expected 23 year span (2000 to 2022).
+
+**Full Range Coverage**: The audit revealed that 177 countries have a complete, uninterrupted record for the entire 23 year period.
+
+**Partial Coverage**: Only 9 countries were identified as having partial or missing years. I kept these in the dataset to maintain global diversity, as reporting gaps are common in fragile or developing states.
+
+**Final Export**: Once the data was verified, I exported the final collection as "merged_data.csv." This master file now contains 186 countries in total, providing a robust mix of stable and developing nations.
+
+**The Result**: I now have a high quality master dataset. The fact that 177 countries have a full data range means that the patterns we see in the bubble chart are backed by a very large and reliable body of global evidence. This structure allows us to see not just where countries are today, but how they have moved over time.
 ```{r}
 #Merging the datasets into a master dataset using iso_code and year columns, enabled by the left_join function
 merged_df <- under_5_mortality %>%
   left_join(immunisation,  by = c("iso_code", "year")) %>%
   left_join(wash,          by = c("iso_code", "year")) %>%
+  left_join(gdp_per_capita,by = c("iso_code", "year")) %>%
+  left_join(under5_pop,    by = c("iso_code", "year")) %>%
   left_join(h_expenditure, by = c("iso_code", "year"))
 
 
 merged_df <- merged_df %>%
   select(
     -country.y,
-    -country.x.x,
-    -bound,
     -country.y.y,
-    country = country.x) %>%
-  filter(if_all(where(is.numeric), ~ !is.na(.)))
-
-  
-merged_df
+    -country.y.y.y,
+    -country.x.x,
+    -country.x.x.x,
+    -bound,
+     country = country.x) %>% 
+  filter(!is.na(gdp_percapita), 
+         !is.na(mortality_r), 
+         !is.na(pop_under_5))
 
 sapply(merged_df, class)
 
@@ -163,274 +216,779 @@ country_years %>%
     partial_or_missing = sum(!full_2000_2022) # 2️⃣ Count FALSEs → incomplete countries
   )
 
+
+
 ```
+*PHASE 2: VISUALIZING THE RELATIONSHIP BETWEEN UNDER-5 MORTALITY AND GDP**
+
+As a preliminary step for answering the first question: **To what extent is a country’s GDP per capita associated with its under-five mortality rate (per 1000 live births) and does the link get weaker as countries get richer?**
+
+The goal of this phase was to create an interactive "Preston Curve" (bubble chart) to visually explore the link between economic growth and child survival from 2000 to 2022.
+
+**Dynamic Motion**: I built an animated bubble chart using Plotly, allowing us to see how countries move across the economic spectrum over time.
+
+**Dimensions of Data**: Each bubble represents a country, with its position showing GDP per capita (x-axis) and Mortality Rate (y-axis). The size of each bubble is weighted by the Under-5 Population, highlighting where the largest groups of vulnerable children are located.Regional 
+
+**Context**: I applied a custom color palette to group countries by their SDG Regions, making it easy to identify geographic trends and outliers.
+
+**Logarithmic Scaling**: Because the differences between the richest and poorest nations are so vast, I used log scales for both axes. This ensures that progress in low-income countries is just as visible as trends in high-income ones.
+
+**Preliminary Findings**: In this preliminary visualization, the bubble chart hints at a significant negative correlation between a country’s wealth and its child survival outcomes, suggesting that higher GDP per capita is generally linked to lower under-five mortality rates. This relationship follows a clear logarithmic pattern known as the Preston Curve: in lower-income countries, small increases in wealth are associated with declines in mortality, whereas in wealthier nations, the link becomes significantly weaker as survival rates approach the minimum possible death rate. For example, in 2000, Bangladesh (GDP - $2,712.9) had a high mortality rate of 85.4 per 1,000, but by 2022, as its wealth grew, it saw a dramatic drop in deaths to 31 deaths per 1000 live births. Conversely, in high-income regions like Europe and Northern America, bubbles are clustered at the bottom-right of the chart, showing that even substantial further increases in GDP result in only marginal improvements to already low mortality rates. Furthermore, the varying bubble sizes representing the under-five population highlight that high-population, lower-income nations like India and Bangladesh carry a disproportionate share of the global mortality burden despite their steady economic progress
 
 ```{r}
-library(dplyr)
-library(ggplot2)
-library(plotly)
-library(scales)
-library(gganimate)
+# ==========================================
+# 1. LOAD LIBRARIES
+# ==========================================
+library(dplyr)    
+library(ggplot2)  
+library(plotly)   
+library(scales)   
 
-# ----------------------------
-# Data Cleaning
-# ----------------------------
-merged_df$country <- iconv(merged_df$country, from = "", to = "UTF-8", sub = "")  # Fix encoding
-merged_df$country <- trimws(merged_df$country)                                  # Remove spaces
-merged_df$country <- as.character(merged_df$country)                             # Ensure character type
-merged_df <- merged_df %>% filter(!is.na(mortality_r) & country != "")           # Remove rows with NA mortality
+# ==========================================
+# 2. DATA CLEANING & PRE-PROCESSING
+# ==========================================
+merged_df$country <- iconv(merged_df$country, from = "", to = "UTF-8", sub = "")
+merged_df$country <- trimws(merged_df$country)
+merged_df$country <- as.character(merged_df$country)
 
-# ----------------------------
-# Select Top & Bottom 10 (latest available year per country)
-# ----------------------------
-top_bottom <- merged_df %>%
-  group_by(country) %>%
-  filter(year == max(year)) %>%     # Take latest available year for each country
-  ungroup() %>%
-  arrange(mortality_r) %>%          # Sort ascending
-  slice_head(n = 10) %>%            # Take 10 countries with lowest mortality
-  bind_rows(
-    merged_df %>%
-      group_by(country) %>%
-      filter(year == max(year)) %>%
-      ungroup() %>%
-      arrange(desc(mortality_r)) %>% # Sort descending
-      slice_head(n = 10)             # Take 10 countries with highest mortality
+merged_df <- merged_df %>%
+  filter(!is.na(mortality_r), country != "", !is.na(iso_code))
+
+anim_df <- merged_df %>% 
+  filter(year >= 2000, year <= 2022) %>% 
+  group_by(iso_code, year) %>%          
+  slice(1) %>%                           
+  ungroup() %>%                          
+  arrange(iso_code, year)               
+
+# Strictly 1K and 100K for GDP; 1 and 500 for Mortality
+x_breaks <- c(1000, 100000)  
+y_breaks <- c(1, 500)       
+
+# ==========================================
+# 3. GGPLOT BASE CONSTRUCTION
+# ==========================================
+# Harmonized SDG region colors (soft, dark-background-friendly)
+sdg_colors <- c(
+  "Europe and Northern America"      = "#11A7B1", # Cyan/Teal
+  "Northern Africa and Western Asia" = "#8E7AE3", # Purple
+  "Central and Southern Asia"        = "#FF66C4", # Pink
+  "Eastern and South-Eastern Asia"   = "#00B4FF", # Light Blue
+  "Latin America and the Caribbean"  = "#4ECDC4", # Turquoise
+  "Oceania"                          = "#FFA07A", # Light Salmon
+  "Sub-Saharan Africa"               = "#FF7F7F"  # Light Red
+)
+
+p <- ggplot(
+  anim_df,
+  aes(
+    x = gdp_percapita,       
+    y = mortality_r,         
+    color = sdg_region,       # Color by SDG region
+    size = pop_under_5,      
+    frame = year,            
+    ids = iso_code,          
+    group = iso_code,        
+    text = paste(            
+      "<b>", country, "</b>",
+      "<br>Region:", sdg_region,
+      "<br>Year:", year,
+      "<br>GDP per Capita:", dollar(gdp_percapita),
+      "<br>Under-5 Mortality:", round(mortality_r, 1),
+      "<br>Under-5 Population:", comma(pop_under_5)
+    )
   )
+) +
+  geom_point(alpha = 0.65) +  # Slightly transparent to reduce shouting
 
-# Reset factor levels to avoid NA in plot
-top_bottom$country <- factor(top_bottom$country, levels = top_bottom$country)
-
-# ----------------------------
-# Plot with Data Labels
-# ----------------------------
-ggplot(top_bottom, aes(x = reorder(country, mortality_r), y = mortality_r, fill = mortality_r)) +
-  geom_col() +                                          # Draw bars
-  geom_text(aes(label = round(mortality_r, 1)),        # Add mortality values on bars
-            hjust = -0.1, size = 3) +                  # Slightly outside bar
-  coord_flip() +                                       # Horizontal bars
-  scale_fill_gradient(low = "green", high = "red") +  # Color gradient
-  labs(title = "Top & Bottom 10 Countries: Under-5 Mortality (Latest Year)",
-       subtitle = "Mortality per 1,000 live births",
-       x = "", y = "Mortality Rate (per 1,000)") +
-  theme_minimal()                                      # Clean theme
-
-
-library(dplyr)
-library(ggplot2)
-
-
-# By SDG region
-ggplot(merged_df, aes(x=year, y=mortality_r, color=sdg_region)) +
-  stat_summary(fun=mean, geom="line") +
-  theme_minimal() +
-  labs(title="Average Mortality Rate Over Time by SDG Region",
-       x="Year",
-       y="Mortality Rate")
-
-# By country (top 5 countries with most data)
-top_countries <- merged_df %>% 
-  count(country) %>% 
-  slice_max(n, n = 5) %>% 
-  pull(country)
-
-df_top <- merged_df %>% filter(country %in% top_countries)
-
-ggplot(df_top, aes(x=year, y=mortality_r, color=country)) +
-  geom_line() +
-  theme_minimal() +
-  labs(title="Mortality Rate Trends for Top 5 Countries",
-       x="Year",
-       y="Mortality Rate")
-
-# =========================================
-# Animated Bubble Chart: Under-5 Mortality vs GDP
-# Bubble size = Health Expenditure per Capita
-# Dark theme + slow animation (~4 seconds per year)
-# =========================================
-
-library(ggplot2)
-library(dplyr)
-library(scales)
-library(plotly)
-library(htmlwidgets)
-
-# ----------------------------
-# 1️⃣ Prepare Data (ALL YEARS)
-# ----------------------------
-anim_df <- merged_df %>%
-  filter(
-    !is.na(gdp_percapita),
-    !is.na(mortality_r),
-    !is.na(h_exp_percapita),
-    !is.na(country),
-    year >= 2000,
-    year <= 2022
-  )
-
-# ----------------------------
-# 2️⃣ Create ggplot (Animated)
-# ----------------------------
-p <- ggplot(anim_df, aes(
-  x = gdp_percapita,
-  y = mortality_r,
-  color = country,
-  size  = h_exp_percapita,
-  frame = year,
-  text = paste(
-    "Country:", country,
-    "<br>Year:", year,
-    "<br>GDP per Capita:", dollar(gdp_percapita),
-    "<br>Under-5 Mortality:", round(mortality_r, 1),
-    "<br>Health Expenditure per Capita:", dollar(h_exp_percapita)
-  )
-)) +
-  geom_point(alpha = 0.85) +
-  scale_x_continuous(
-    trans = "log10",
-    limits = c(500, 150000),
-    breaks = c(1000, 4000, 16000, 64000),
-    labels = comma
+  scale_x_log10(
+    limits = c(700, 150000),         
+    breaks = x_breaks,               
+    labels = dollar,                 
+    expand = expansion(mult = 0.05)  
   ) +
-  scale_y_continuous(
-    limits = c(0, max(anim_df$mortality_r, na.rm = TRUE) + 20)
+
+  scale_y_log10(
+    limits = c(1, 500),              
+    breaks = y_breaks,               
+    labels = comma,                  
+    expand = expansion(mult = 0.05)
   ) +
+
   scale_size(range = c(4, 25), guide = "none") +
+  scale_color_manual(values = sdg_colors, name = "SDG Region") +
+
   labs(
-    x = "GDP per capita (log scale, PPP)",
-    y = "Under-5 Mortality (per 1,000 live births)",
-    color = "Country",
-    title = "Under-5 Mortality vs GDP per Capita (2000–2022)"
+    x = "GDP per capita (USD, PPP Adjusted)",
+    y = "Under-5 mortality (per 1,000 live births)"
   ) +
+
   theme_minimal(base_size = 13) +
   theme(
-    plot.background  = element_rect(fill = "black", color = NA),
+    plot.background  = element_rect(fill = "black", color = NA),  
     panel.background = element_rect(fill = "black", color = NA),
-    legend.background = element_rect(fill = "black"),
-    legend.key = element_rect(fill = "black"),
     text = element_text(color = "white"),
     axis.text = element_text(color = "white"),
     axis.title = element_text(color = "white", face = "bold"),
-    panel.grid.major = element_line(color = "gray30", linetype = "dotted"),
-    panel.grid.minor = element_blank()
+    panel.grid.major = element_blank(), 
+    panel.grid.minor = element_blank(),
+    plot.margin = margin(25, 25, 25, 25),
+    axis.line = element_line(color = "white", linewidth = 0.6),
+    axis.ticks = element_line(color = "white"),
+    legend.position = "right",
+    legend.background = element_rect(fill = "black", color = NA),
+    legend.key = element_rect(fill = "black", color = NA),
+    legend.title = element_text(color = "white", face = "bold"),
+    legend.text = element_text(color = "white")
   )
 
-# ----------------------------
-# 3️⃣ Convert to Plotly (SLOW animation)
-# ----------------------------
+# ==========================================
+# 4. PLOTLY CONVERSION & INTERACTIVITY
+# ==========================================
 interactive_anim <- ggplotly(p, tooltip = "text") %>%
   animation_opts(
-    frame = 4000,      # ⏱️ 4 seconds per year
-    transition = 4000,
-    easing = "linear",
-    redraw = FALSE
-  )
-
-# ----------------------------
-# 4️⃣ Display
-# ----------------------------
-interactive_anim
-
-# ----------------------------
-# 5️⃣ Save as HTML
-# ----------------------------
-saveWidget(
-  interactive_anim,
-  "under5_mortality_vs_gdp_slow_dark.html",
-  selfcontained = TRUE
-)
-
-
-```
-**Animation by region**
-
-```{r}
-# ----------------------------
-# 6️⃣ Add Interactive Filters (Region, Country, Year)
-# ----------------------------
-
-# Get unique values
-regions   <- sort(unique(anim_df$sdg_region))
-countries <- sort(unique(anim_df$country))
-years     <- sort(unique(anim_df$year))
-
-# Helper: create filter buttons
-make_buttons <- function(values, column) {
-  c(
-    list(
-      list(
-        method = "restyle",
-        args = list("transforms[0].value", values),
-        label = "All"
-      )
-    ),
-    lapply(values, function(v) {
-      list(
-        method = "restyle",
-        args = list("transforms[0].value", v),
-        label = v
-      )
-    })
-  )
-}
-
-interactive_anim <- interactive_anim %>%
+    frame = 4000,      
+    transition = 4000, 
+    easing = "cubic-in-out", 
+    redraw = FALSE     
+  ) %>%
   layout(
-    updatemenus = list(
-      # 🔹 Region filter
-      list(
-        type = "dropdown",
-        direction = "down",
-        x = 0.02,
-        y = 1.15,
-        showactive = TRUE,
-        bgcolor = "black",
-        font = list(color = "white"),
-        buttons = make_buttons(regions, "sdg_region")
-      ),
-
-      # 🔹 Country filter
-      list(
-        type = "dropdown",
-        direction = "down",
-        x = 0.30,
-        y = 1.15,
-        showactive = TRUE,
-        bgcolor = "black",
-        font = list(color = "white"),
-        buttons = make_buttons(countries, "country")
-      )
+    xaxis = list(
+      title = list(text = "GDP per capita (USD)", standoff = 25, font = list(size = 14, color = "white")),
+      tickvals = log10(x_breaks), 
+      ticktext = dollar(x_breaks),
+      tickfont = list(size = 11, color = "white"),
+      showgrid = FALSE
     ),
+    yaxis = list(
+      title = list(text = "Under-5 mortality (per 1,000 live births)", standoff = 15, font = list(size = 14, color = "white")),
+      tickvals = log10(y_breaks),
+      ticktext = comma(y_breaks),
+      tickfont = list(size = 11, color = "white"),
+      showgrid = FALSE
+    ),
+    title = list(
+      text = paste0(
+        "<span style='font-size:18px; color:#11A7B1;'><b>Higher GDP levels</b></span>",
+        "<span style='font-size:18px; color:#CCCCCC;'>, as seen in wealthier countries,</span><br>",
+        "<span style='font-size:18px; color:#CCCCCC;'>are generally associated with </span>",
+        "<span style='font-size:18px; color:#8E7AE3;'><b>lower</b></span> ",
+        "<span style='font-size:18px; color:#FF7F7F;'><b>child mortality rates</b></span>"
 
+      ),
+      x = 0.5, xanchor = "center", y = 0.88, yanchor = "top",
+      font = list(family = "Arial, sans-serif")
+    ),
     annotations = list(
       list(
-        text = "<b>Filter by Region</b>",
-        x = 0.02, y = 1.22, xref = "paper", yref = "paper",
+        x = 0.88, y = 0.96, xref = "paper", yref = "paper",
+        text = paste0(
+          "<span style='color:#87CEEB'>Bubble size = Under-5 population</span>",
+          "<span style='color:#cccccc'> &nbsp;&nbsp;|&nbsp;&nbsp; </span>",
+          "<span style='color:#FFA07A'>Each bubble = A country (hover for details)</span>"
+        ),
         showarrow = FALSE,
-        font = list(color = "white")
-      ),
-      list(
-        text = "<b>Filter by Country</b>",
-        x = 0.30, y = 1.22, xref = "paper", yref = "paper",
-        showarrow = FALSE,
-        font = list(color = "white")
+        font = list(size = 12, family = "Arial, sans-serif")
       )
-    )
-  ) %>%
-  style(
-    transforms = list(
-      list(
-        type = "filter",
-        target = ~sdg_region,
-        operation = "in",
-        value = regions
-      )
-    )
+    ),
+    margin = list(t = 130, b = 80, l = 100, r = 40)
   )
+
+# Display interactive plot
+interactive_anim
+
+# ==========================================
+# 5. EXPORT
+# ==========================================
+htmlwidgets::saveWidget(
+  interactive_anim,
+  "under5_mortality_final.html",
+  selfcontained = TRUE 
+)
 
 ```
 
+**Step 2-Phase 2: Building the Interactive Research Dashboard**
 
+To make the findings more accessible to my audience, I developed an R Shiny Dashboard. While the core bubble chart remains the focus, the dashboard adds new layers of functionality that allow users to explore the data for themselves.
 
+**Custom Filters**: I added a sidebar that allows users to filter the data by SDG Region or specific Countries. This is useful for looking at the "Wealth Health" story within a specific area, such as focusing only on Latin America or Sub Saharan Africa.
 
+**Dynamic Comparison**: By selecting or deselecting countries, users can directly compare how different nations have moved along the Preston Curve. This makes it easy to see which countries are overperforming or underperforming compared to their neighbors.
+
+**User Controlled Timeline**: The dashboard gives the user full control over the animation speed and the year slider. This allows for a deep dive into specific periods, such as the progress made during the era of the Millennium Development Goals.
+
+**The Result**: This dashboard turns the data into an interactive experience. It allows anyone to test our research questions by looking at specific regions or countries.
+ 
+```{r}
+# Load required libraries for the Shiny application
+library(shiny)    # Framework for building interactive web applications
+library(dplyr)    # Data manipulation and transformation
+library(ggplot2)  # Grammar of graphics for creating static plots
+library(plotly)   # Converts ggplot2 plots to interactive web graphics
+library(scales)   # Provides label formatting functions (dollar, comma, etc.)
+
+# ==========================================
+# DATA CLEANING AND PREPARATION SECTION
+# ==========================================
+
+# Convert country names to UTF-8 encoding to handle special characters
+# iconv() converts character vectors between encodings
+# 'from = ""' uses the current locale's encoding
+# 'to = "UTF-8"' specifies target encoding
+# 'sub = ""' replaces unconvertible characters with empty string
+merged_df$country <- iconv(merged_df$country, from = "", to = "UTF-8", sub = "")
+
+# Remove leading/trailing whitespace from country names
+# trimws() eliminates spaces, tabs, newlines at the beginning/end of strings
+merged_df$country <- trimws(merged_df$country)
+
+# Convert country column to character type (ensures proper string handling)
+# as.character() explicitly converts to string data type
+merged_df$country <- as.character(merged_df$country)
+
+# Filter the dataset to remove incomplete/irrelevant records
+# %>% is the pipe operator from dplyr, passes left side result as first argument to right side
+merged_df <- merged_df %>%
+  filter(!is.na(mortality_r),  # Keep only rows where mortality_r is not missing (NA)
+         country != "",         # Exclude empty string country names
+         !is.na(iso_code))      # Exclude rows missing ISO country codes
+
+# Create animation-ready dataset for years 2000-2022
+anim_df <- merged_df %>%
+  filter(year >= 2000, year <= 2022) %>%  # Limit to 21st century data range
+  group_by(iso_code, year) %>%           # Group by unique country-year combinations
+  slice(1) %>%                           # Keep only first row per group (removes duplicates)
+  ungroup() %>%                          # Remove grouping structure for subsequent operations
+  arrange(iso_code, year)                # Sort by country code then year for chronological order
+
+# Define axis break points for logarithmic scales
+# X-axis: GDP per capita breaks at $1,000 and $100,000
+x_breaks <- c(1000, 100000)  # Creates numeric vector with two break points
+# Y-axis: Mortality rate breaks at 1 and 500 deaths per 1,000
+y_breaks <- c(1, 500)        # Creates numeric vector with two break points
+
+# Extract unique SDG regions for dropdown menu
+# unique() returns distinct values from the sdg_region column
+all_regions <- unique(anim_df$sdg_region)
+# Remove NA (missing) values from the region list
+all_regions <- all_regions[!is.na(all_regions)]
+# Sort regions alphabetically for consistent dropdown ordering
+all_regions <- sort(all_regions)
+
+# ==========================================
+# USER INTERFACE (UI) DEFINITION
+# ==========================================
+
+# Create the main UI container using fluidPage (responsive layout)
+ui <- fluidPage(
+  
+  # Custom CSS styling embedded in HTML head section
+  tags$head(
+    tags$style(HTML("
+      /* Overall page styling - matches plotly dark theme */
+      body {
+        background-color: black !important;  /* Black background for entire page */
+        color: white !important;             /* White text color throughout */
+        font-family: 'Arial', sans-serif;    /* Consistent font family */
+      }
+      
+      /* Main container removes default padding */
+      .container-fluid {
+        padding: 0 !important;               /* Remove all padding */
+        background-color: black !important;  /* Ensure black background */
+      }
+      
+      /* Sidebar panel styling */
+      .well {
+        background-color: #111111 !important;  /* Dark gray background */
+        border: 1px solid #333333 !important;  /* Medium gray border */
+        border-radius: 8px !important;         /* Rounded corners */
+        padding: 20px !important;              /* Internal spacing */
+        margin: 15px !important;               /* External spacing */
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); /* Subtle shadow for depth */
+      }
+      
+      /* Sidebar header section */
+      .sidebar-header {
+        background-color: #1a1a2e;           /* Dark blue header background */
+        color: white;                        /* White text */
+        padding: 12px 15px;                  /* Vertical and horizontal padding */
+        margin: -20px -20px 20px -20px;      /* Negative margins to extend to edges */
+        border-radius: 8px 8px 0 0;          /* Rounded top corners only */
+        font-weight: bold;                   /* Bold text */
+        font-size: 15px;                     /* Slightly larger font */
+        letter-spacing: 0.5px;               /* Slight spacing between letters */
+        text-transform: uppercase;           /* All capital letters */
+      }
+      
+      /* Dropdown input box styling */
+      .selectize-input {
+        background-color: #222222 !important;  /* Very dark gray background */
+        color: white !important;               /* White text */
+        border: 1px solid #444444 !important;  /* Light gray border */
+        border-radius: 4px !important;         /* Slightly rounded corners */
+        padding: 10px !important;              /* Internal padding for text */
+      }
+      
+      /* Dropdown menu styling */
+      .selectize-dropdown {
+        background-color: #222222 !important;  /* Match input background */
+        border = 1px solid #444444 !important; /* Consistent border */
+      }
+      
+      /* Individual dropdown options */
+      .selectize-dropdown-content div {
+        background-color: #222222 !important;  /* Dark background for options */
+        color: white !important;               /* White option text */
+        padding: 8px 10px;                     /* Spacing within each option */
+      }
+      
+      /* Hover effect for dropdown options */
+      .selectize-dropdown-content div:hover {
+        background-color: #2d3748 !important;  /* Lighter gray on hover */
+      }
+      
+      /* Selected item in dropdown display */
+      .selectize-input .item {
+        color: #87CEEB !important;  /* Light blue color for selected items */
+      }
+      
+      /* Form control labels */
+      .control-label {
+        color: #cccccc !important;  /* Light gray text */
+        font-weight: 600;           /* Semi-bold weight */
+        margin-bottom: 8px;         /* Space below label */
+        display: block;             /* Block display for proper spacing */
+        font-size: 14px;            /* Slightly smaller than body text */
+      }
+      
+      /* Horizontal rule styling */
+      hr {
+        border-top: 1px solid #444444 !important;  /* Medium gray line */
+        margin: 25px 0 !important;                 /* Space above and below */
+      }
+      
+      /* Information box styling */
+      .info-box {
+        background-color: #1a1a2e;  /* Dark blue background */
+        padding: 15px;              /* Internal spacing */
+        border-radius: 6px;         /* Rounded corners */
+        margin-top: 20px;           /* Space above the box */
+      }
+      
+      /* Main plot container */
+      .plot-container {
+        padding: 10px;                /* Internal padding around plot */
+        border-radius: 8px;           /* Rounded corners */
+        background-color: #111111;    /* Dark gray background */
+        margin: 15px;                 /* External spacing */
+      }
+      
+      /* Error message styling */
+      .shiny-output-error {
+        color: #ff6b6b !important;    /* Red color for errors */
+        font-weight: bold;            /* Bold text for emphasis */
+        font-size: 16px;              /* Larger font size */
+        padding: 20px;                /* Spacing around error */
+      }
+      
+      /* Dropdown text input styling */
+      .selectize-input input {
+        color: white !important;      /* Ensure typed text is visible */
+      }
+      
+      /* Focus state for dropdowns */
+      .selectize-input.focus {
+        border-color: #3498db !important;       /* Blue border when focused */
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2) !important; /* Blue glow */
+      }
+      
+      /* Data sources footer */
+      .data-sources {
+        margin-top: 20px;             /* Space above footer */
+        padding-top: 15px;            /* Space inside top */
+        border-top: 1px solid #444444; /* Top border line */
+        font-size: 12px;              /* Small font size */
+        color: #999999;               /* Dimmed gray text */
+      }
+      
+      /* Data sources title */
+      .data-sources-title {
+        color: #cccccc;               /* Light gray title */
+        font-weight: 600;             /* Semi-bold */
+        margin-bottom: 5px;           /* Space below title */
+        font-size: 13px;              /* Slightly larger than content */
+      }
+    "))
+  ),
+  
+  # ==========================================
+  # LAYOUT STRUCTURE USING sidebarLayout
+  # ==========================================
+  
+  # sidebarLayout creates two-panel layout: sidebar (controls) + main (plot)
+  sidebarLayout(
+    
+    # ==========================================
+    # SIDEBAR PANEL (Left side - Controls)
+    # ==========================================
+    sidebarPanel(
+      width = 3,  # Occupies 3/12 of horizontal space (25% width)
+      
+      # Custom header for sidebar section
+      div(class = "sidebar-header", 
+          "Filter Controls"  # Section title
+      ),
+      
+      # Region selector dropdown
+      div(
+        # Label for region dropdown
+        tags$label("Select Region:", class = "control-label"),
+        # Dropdown input for region selection
+        selectInput(
+          "region",                     # Input ID (referenced in server)
+          label = NULL,                 # No visible label (handled by tags$label above)
+          choices = c("All Regions", all_regions),  # Options: "All" plus unique regions
+          selected = "All Regions",     # Default selection
+          width = "100%"                # Full width of container
+        )
+      ),
+      
+      br(),  # Line break for spacing
+      
+      # Country selector dropdown
+      div(
+        # Label for country dropdown
+        tags$label("Select Country:", class = "control-label"),
+        # Dropdown input for country selection
+        selectInput(
+          "country",                     # Input ID (referenced in server)
+          label = NULL,                  # No visible label
+          choices = c("All Countries", sort(unique(anim_df$country))),  # All countries plus "All"
+          selected = "All Countries",    # Default selection
+          width = "100%"                 # Full width
+        )
+      ),
+      
+      hr(),  # Horizontal rule for visual separation
+      
+      # How-to-use instructions section
+      div(
+        # Section title with blue color
+        h5("How to Use:", style = "color: #87CEEB; margin-top: 0;"),
+        # Unordered list of instructions
+        tags$ul(
+          style = "color: #cccccc; font-size: 13px; padding-left: 20px;",  # List styling
+          tags$li("Select a region or country to filter data"),      # Instruction 1
+          tags$li("Hover over bubbles for country details"),         # Instruction 2
+          tags$li("Use the slider below the chart to animate through years")  # Instruction 3
+        )
+      ),
+      
+      # Data sources attribution footer
+      div(class = "data-sources",
+          div(class = "data-sources-title", "Data Sources:"),  # Section title
+          tags$div(style = "line-height: 1.4;",                # Content with line spacing
+                   "• Our World in Data",                       # Source 1
+                   tags$br(),                                   # Line break
+                   "• UNICEF"                                   # Source 2
+          )
+      )
+    ),
+    
+    # ==========================================
+    # MAIN PANEL (Right side - Plot)
+    # ==========================================
+    mainPanel(
+      width = 9,  # Occupies 9/12 of horizontal space (75% width)
+      
+      # Plot container div
+      div(class = "plot-container",
+          # Plotly output element - where the interactive chart will render
+          plotlyOutput("bubble_plot",    # Output ID (matches server output$bubble_plot)
+                       height = "600px", # Fixed height for rectangular aspect ratio
+                       width = "100%")   # Responsive width (fills container)
+      )
+    )
+  )
+)
+
+# ==========================================
+# SERVER LOGIC DEFINITION
+# ==========================================
+
+# Server function defines reactive behavior and outputs
+server <- function(input, output, session) {
+  
+  # ==========================================
+  # SDG REGION COLOR DEFINITION
+  # ==========================================
+  
+  # Color palette for SDG regions (soft colors for dark background)
+  # Named vector: region names as keys, hex color codes as values
+  sdg_colors <- c(
+    "Europe and Northern America"      = "#11A7B1",  # Cyan/Teal
+    "Northern Africa and Western Asia" = "#8E7AE3",  # Purple
+    "Central and Southern Asia"        = "#FF66C4",  # Pink
+    "Eastern and South-Eastern Asia"   = "#00B4FF",  # Light Blue
+    "Latin America and the Caribbean"  = "#4ECDC4",  # Turquoise
+    "Oceania"                          = "#FFA07A",  # Light Salmon
+    "Sub-Saharan Africa"               = "#FF7F7F"   # Light Red
+  )
+  
+  # ==========================================
+  # REACTIVE OBSERVER: Update country dropdown
+  # ==========================================
+  
+  # observeEvent triggers when input$region changes
+  observeEvent(input$region, {
+    
+    # Determine which countries to show based on selected region
+    if (input$region == "All Regions") {
+      # If "All Regions" selected, show all countries from dataset
+      country_choices <- sort(unique(anim_df$country))
+    } else {
+      # Filter countries to only those in selected region
+      country_choices <- anim_df %>%
+        filter(sdg_region == input$region) %>%  # Filter by selected region
+        pull(country) %>%                       # Extract country column as vector
+        unique() %>%                            # Get distinct country names
+        sort()                                  # Sort alphabetically
+    }
+    
+    # Update the country dropdown with new choices
+    updateSelectInput(
+      session,                       # Current Shiny session
+      "country",                     # ID of input to update
+      choices = c("All Countries", country_choices),  # New choices list
+      selected = "All Countries"     # Reset to default selection
+    )
+  })
+  
+  # ==========================================
+  # REACTIVE OUTPUT: Create bubble plot
+  # ==========================================
+  
+  # renderPlotly creates the interactive plot output
+  output$bubble_plot <- renderPlotly({
+    
+    # Start with full animation dataset
+    filtered_data <- anim_df
+    
+    # Apply region filter if not "All Regions"
+    if (input$region != "All Regions") {
+      filtered_data <- filtered_data %>%
+        filter(sdg_region == input$region)  # Filter to selected region
+    }
+    
+    # Apply country filter if not "All Countries"
+    if (input$country != "All Countries") {
+      filtered_data <- filtered_data %>%
+        filter(country == input$country)    # Filter to selected country
+    }
+    
+    # Data validation - check if any data remains after filtering
+    # validate() stops execution and shows error message if condition fails
+    validate(
+      need(nrow(filtered_data) > 0,         # Condition: must have at least 1 row
+           paste("No data available for the selected filters.",
+                 "Please try different region/country combinations."))  # Error message
+    )
+    
+    # ==========================================
+    # GGPLOT2 OBJECT CREATION
+    # ==========================================
+    
+    # Create ggplot object with aesthetic mappings
+    p <- ggplot(
+      filtered_data,  # Data frame to use for plotting
+      aes(
+        x = gdp_percapita,       # X-axis: GDP per capita (economic indicator)
+        y = mortality_r,         # Y-axis: Under-5 mortality rate (health indicator)
+        color = sdg_region,      # Color encoding: SDG region (categorical)
+        size = pop_under_5,      # Size encoding: Under-5 population (continuous)
+        frame = year,            # Animation frame: Year (creates time dimension)
+        ids = iso_code,          # Unique identifier: ISO country code
+        group = iso_code,        # Grouping for animation: Country trajectories
+        # Custom hover text using HTML formatting
+        text = paste(            
+          "<b>", country, "</b>",                     # Bold country name
+          "<br>Region:", sdg_region,                  # Region information
+          "<br>Year:", year,                          # Current year
+          "<br>GDP per Capita:", dollar(gdp_percapita),  # Formatted GDP
+          "<br>Under-5 Mortality:", round(mortality_r, 1),  # Rounded mortality rate
+          "<br>Under-5 Population:", comma(pop_under_5)    # Formatted population
+        )
+      )
+    ) +
+      # Add points (bubbles) to the plot
+      geom_point(alpha = 0.65) +  # Alpha = transparency (0.65 = 65% opaque)
+      
+      # ==========================================
+      # X-AXIS SCALING (Logarithmic)
+      # ==========================================
+      scale_x_log10(
+        limits = c(700, 150000),        # Axis range: $700 to $150,000
+        breaks = x_breaks,              # Break points at $1K and $100K
+        labels = dollar,                # Format as currency with dollar() from scales
+        expand = expansion(mult = 0.05) # Add 5% padding on both ends
+      ) +
+      
+      # ==========================================
+      # Y-AXIS SCALING (Logarithmic)
+      # ==========================================
+      scale_y_log10(
+        limits = c(1, 500),             # Axis range: 1 to 500 deaths/1000
+        breaks = y_breaks,              # Break points at 1 and 500
+        labels = comma,                 # Format numbers with comma separators
+        expand = expansion(mult = 0.05) # Add 5% padding on both ends
+      ) +
+      
+      # ==========================================
+      # SIZE AND COLOR SCALES
+      # ==========================================
+      scale_size(range = c(4, 25),      # Bubble size range: 4 to 25 units
+                 guide = "none") +      # Hide size legend (not needed)
+      scale_color_manual(values = sdg_colors,  # Use custom color palette
+                         name = "SDG Region") + # Legend title
+      
+      # ==========================================
+      # AXIS AND PLOT LABELS
+      # ==========================================
+      labs(
+        x = "GDP per capita (USD, PPP Adjusted)",  # X-axis label with detail
+        y = "Under-5 mortality (per 1,000 live births)"  # Y-axis label
+      ) +
+      
+      # ==========================================
+      # THEME CUSTOMIZATION
+      # ==========================================
+      theme_minimal(base_size = 13) +  # Start with minimal theme, base font size 13
+      theme(
+        plot.background  = element_rect(fill = "black", color = NA),  # Black plot background
+        panel.background = element_rect(fill = "black", color = NA),  # Black panel background
+        text = element_text(color = "white"),            # All text in white
+        axis.text = element_text(color = "white"),       # Axis numbers in white
+        axis.title = element_text(color = "white", face = "bold"),  # Bold axis titles
+        axis.title.y = element_text(margin = margin(r = 15, l = 5), vjust = 1),  # Y-title spacing
+        axis.title.x = element_text(margin = margin(t = 15, b = 5)),  # X-title spacing
+        panel.grid.major = element_blank(),     # Remove major grid lines
+        panel.grid.minor = element_blank(),     # Remove minor grid lines
+        plot.margin = margin(25, 25, 25, 25),   # Plot margins: top, right, bottom, left
+        axis.text.x = element_text(margin = margin(t = 5)),   # X-axis number spacing
+        axis.text.y = element_text(margin = margin(r = 5, l = 5)),  # Y-axis number spacing
+        axis.line = element_line(color = "white", linewidth = 0.6),  # White axis lines
+        axis.ticks = element_line(color = "white"),  # White axis ticks
+      )
+    
+    # ==========================================
+    # CONVERT TO PLOTLY INTERACTIVE PLOT
+    # ==========================================
+    
+    # Convert ggplot object to interactive plotly object
+    interactive_anim <- ggplotly(p,           # ggplot object to convert
+                                 tooltip = "text",  # Use 'text' aesthetic for hover info
+                                 width = NULL,      # Auto width
+                                 height = NULL) %>% # Auto height
+      # Animation options
+      animation_opts(
+        frame = 4000,             # Duration of each frame in milliseconds (4 seconds)
+        transition = 4000,        # Transition time between frames (4 seconds)
+        easing = "cubic-in-out",  # Smooth acceleration/deceleration
+        redraw = FALSE            # Don't redraw entire plot each frame (better performance)
+      ) %>%
+      # Layout customization for plotly
+      layout(
+        # X-axis configuration
+        xaxis = list(
+          title = list(
+            text = "GDP per capita (USD, PPP Adjusted)",  # X-axis title
+            standoff = 25,          # Distance between title and axis
+            font = list(size = 14, color = "white")  # Title font properties
+          ),
+          tickvals = log10(x_breaks),    # Positions for ticks on log scale
+          ticktext = dollar(x_breaks),   # Labels for ticks (formatted as currency)
+          tickfont = list(size = 11, color = "white"),  # Tick label styling
+          showgrid = FALSE               # Hide grid lines
+        ),
+        
+        # Y-axis configuration
+        yaxis = list(
+          title = list(
+            text = "Under-5 mortality (per 1,000 live births)",  # Y-axis title
+            standoff = 15,          # Distance between title and axis
+            font = list(size = 14, color = "white")  # Title font properties
+          ),
+          tickvals = log10(y_breaks),    # Positions for ticks on log scale
+          ticktext = comma(y_breaks),    # Labels for ticks (with comma formatting)
+          tickfont = list(size = 11, color = "white"),  # Tick label styling
+          showgrid = FALSE               # Hide grid lines
+        ),
+        
+        # ==========================================
+        # MAIN TITLE (Data Story)
+        # ==========================================
+        title = list(
+          text = paste0(
+            # First line: Blue emphasis on "Higher GDP levels"
+            "<span style='font-size:18px; color:#11A7B1;'><b>Higher GDP levels</b></span>",
+            # Continuation: Gray explanatory text
+            "<span style='font-size:18px; color:#CCCCCC;'>, as seen in wealthier countries,</span><br>",
+            # Second line start: More explanatory text
+            "<span style='font-size:18px; color:#CCCCCC;'>are generally associated with </span>",
+            # Purple emphasis on "lower"
+            "<span style='font-size:18px; color:#8E7AE3;'><b>lower</b></span> ",
+            # Red emphasis on "child mortality rates"
+            "<span style='font-size:18px; color:#FF7F7F;'><b>child mortality rates</b></span>"
+          ),
+          x = 0.5,           # Horizontal position (center)
+          xanchor = "center", # Anchor point is center of text
+          y = 0.88,          # Vertical position (88% from bottom)
+          yanchor = "top",   # Anchor point is top of text
+          font = list(family = "Arial, sans-serif")  # Font family
+        ),
+        
+        # ==========================================
+        # SUBTITLE ANNOTATION
+        # ==========================================
+        annotations = list(
+          list(
+            x = 0.75,       # Horizontal position (88% from left)
+            y = 0.99,       # Vertical position (96% from bottom)
+            xref = "paper", # Use paper coordinates (0-1 scale)
+            yref = "paper", # Use paper coordinates
+            # Annotation text with color coding
+            text = paste0(
+              "<span style='color:#87CEEB'>Bubble size = Under-5 population</span>",  # Blue: size explanation
+              "<span style='color:#cccccc'> &nbsp;&nbsp;|&nbsp;&nbsp; </span>",       # Gray separator
+              "<span style='color:#FFA07A'>Each bubble = A country (hover for details)</span>"  # Salmon: hover tip
+            ),
+            showarrow = FALSE,  # Don't show arrow pointing to something
+            font = list(size = 12, family = "Arial, sans-serif")  # Font properties
+          )
+        ),
+        
+        # Plot margins in pixels
+        margin = list(t = 130,  # Top margin (extra space for title)
+                      b = 80,   # Bottom margin
+                      l = 100,  # Left margin
+                      r = 40),  # Right margin
+        
+        autosize = TRUE,        # Automatically adjust to container size
+        showlegend = FALSE       # Display the SDG region legend
+      )
+    
+    # Return the final interactive plot object to be rendered
+    interactive_anim
+  })
+}
+
+# ==========================================
+# RUN THE SHINY APPLICATION
+# ==========================================
+
+# Combine UI and server to create and launch the Shiny app
+shinyApp(ui = ui, server = server)
+```
 
