@@ -16,10 +16,15 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Reducing the number of children who die before their fifth birthday is a core target within the sustainable development goal three of health and well-being and is a sign of a country’s human development index. Previously, the Preston curve showed a strong correlation between a country’s per capita income and under-5 deaths (Preston, 1975): whereby higher income levels are associated with lower under-five mortality.  Globally, the under-5 mortality has reduced by more than half from 94 per 1000 live births in 1990 to 37 per 1000 live births in 2023 (World Bank, 2023). This reduction can be attributed to economic growth and global health programs. 
 
-However, economic growth alone is not enough to protect children unless significant investments are made in healthcare. Often, countries with comparable income levels differ in child survival outcomes because of differences in how their systems work and the amounts of investments made in health. (Houeling et al, 2005; Our World in Data, 2023). The purpose of this data analysis project is to analyze at the relationship between under-5 mortality and Gross Domestic Product (GDP) per capita (adjusted for inflation and cost of living by Our World in Data, 2023) and systemic factors like vaccination coverage, access to clean water and sanitation and healthcare while looking at the regional differences. Here are the research/data analysis questions: 
+Research in early 2000s established that economic growth alone is not enough to protect children unless it is paired with strategic priority-based investments in healthcare infrastructure. Houweling et al. (2005) reported that countries with comparable income levels experienced different outcomes because economic growth increased within-country inequalities and suggested increased public spending on health services like immunization and skilled birth attendance focusing on poor communities to close the gap. These inequalities were also confirmed by Cesar G Victoria (2003) who observed that the disparity between the rich and poor countries was becoming wider due to increasing income disparities within countries, and suggested increased interventions targeting the poor and equitable universal health coverage. 
 
-   1.	To what extent is a country’s GDP per capita associated with its under-five mortality rate (per 1000 live births) and does the link get weaker as countries get richer?
-   2.	How much are systemic factors such as vaccination coverage, access to clean water and sanitation and healthcare investment (as a % of GDP) associated with a country’s under-five mortality rate (per 1000 live births)
+Conversely, present evidence suggests that preventing mortality has evolved from access to the quality of care. Magret Kruk et al (2018) argues that despite the increased domestic and donor funding of health programs which has saved lives, the quality of care across different countries is often inadequate and recommends Universal Healthcare Coverage as an opportunity to improve the quality in health systems. The WHO Monitoring Report 2023 reported that while service coverage access improved across income status between 2015 and 2019, it was accompanied by limitations.According to this report, the service coverage index for healthcare has stagnated since the sustainable development goals were launched in 2015.The report further reveals how the focus of many countries has been on vertical programs rather than investing in health system capacities. In the report, while the low income and low middle income countries experienced catastrophic out-of-pocket expenditures despite service access gains, the upper middle income countries had gaps in access to services. This suggests that expenditure on healthcare by a country does not guarantee positive outcomes because it depends on the structural stability of the systems, yet this is not well quantified and documented. The report also revealed gaps in access to reproductive, maternal, neonatal, child and adolescent health services globally.While the importance of system pillars and spending is known, it remains unclear whether the efficiency of financial investment is conditional on the pre-existing structural maturity of the health system.
+
+This project investigates these determinants of child survival through a quantitative analysis of cross national data, guided by two core research questions:
+
+**Question**: To what extent do national income, government health spending, and preventive/infrastructural factors explain variations in child mortality, and does the effect of health spending vary by a country's income status, used as a proxy for structural health system maturity?
+
+While high income status of countries may not automatically guarantee better access to healthcare as indicated above, it does have better health system stability at baseline. Hence, income status is utilized in this study as a proxy for health system stability and horizontal infrastructure required to for sustainable survival outcomes.
    
 **Variables per country (2000-2002)**
     •	Under_5 mortality rate 
@@ -106,11 +111,11 @@ immunisation  <- immunisation %>%
 immunisation
 
 #Importing and managing the healthcare expenditure data set as a % of GDP
-h_expenditure <-read.csv("C:/Users/audic/Documents/GitHub/Beyond-GDP-Health-System-Drivers-of-Child-Survival/healthcare_expenditure.csv", header = TRUE, sep =',')
+h_expenditure <-read.csv("C:/Users/audic/Documents/GitHub/Beyond-GDP-Health-System-Drivers-of-Child-Survival/health_exp.csv", header = TRUE, sep =',')
 
 #Rounding off health expenditure per capita figures to one decimal place
 h_expenditure <- h_expenditure %>%
-  mutate(health_exp_perc_gdp = round(health_exp_perc_gdp, 1))
+  mutate(health_exp_perc_ppp = round(health_exp_perc_ppp, 1))
 
 #Importing gdp per capita data from Our World in Data
 gdp_per_capita <-read.csv("C:/Users/audic/Documents/GitHub/Beyond-GDP-Health-System-Drivers-of-Child-Survival/gdp.csv", header = TRUE, sep =',')
@@ -132,6 +137,11 @@ wash
 under5_pop <- read.csv("C:/Users/audic/Documents/GitHub/Beyond-GDP-Health-System-Drivers-of-Child-Survival/population.csv", header = TRUE, sep =',')
 
 under5_pop
+
+#Importing country income status data set
+income <- read.csv("C:/Users/audic/Documents/GitHub/Beyond-GDP-Health-System-Drivers-of-Child-Survival/income_country.csv", header = TRUE, sep =',')
+
+income
 ```
 **Step 1-Phase 3: Data Merging and Coverage Audit**
 
@@ -157,7 +167,7 @@ merged_df <- under_5_mortality %>%
   left_join(wash,          by = c("iso_code", "year")) %>%
   left_join(gdp_per_capita,by = c("iso_code", "year")) %>%
   left_join(under5_pop,    by = c("iso_code", "year")) %>%
-  left_join(h_expenditure, by = c("iso_code", "year"))
+  left_join(h_expenditure, by = c("iso_code", "year")) 
 
 
 merged_df <- merged_df %>%
@@ -215,9 +225,6 @@ country_years %>%
     full_range = sum(full_2000_2022),         # 1️⃣ Count TRUEs → complete countries
     partial_or_missing = sum(!full_2000_2022) # 2️⃣ Count FALSEs → incomplete countries
   )
-
-
-
 ```
 *PHASE 2: VISUALIZING THE RELATIONSHIP BETWEEN UNDER-5 MORTALITY AND GDP**
 
@@ -991,4 +998,387 @@ server <- function(input, output, session) {
 # Combine UI and server to create and launch the Shiny app
 shinyApp(ui = ui, server = server)
 ```
+
+```{r}
+library(tidyverse)
+
+library(dplyr)
+
+merged_df2 <- under_5_mortality %>%
+  left_join(immunisation %>% select(-any_of("country")),   by = c("iso_code", "year")) %>%
+  left_join(wash %>% select(-any_of("country")),           by = c("iso_code", "year")) %>%
+  left_join(gdp_per_capita %>% select(-any_of("country")), by = c("iso_code", "year")) %>%
+  left_join(under5_pop %>% select(-any_of("country")),     by = c("iso_code", "year")) %>%
+  left_join(h_expenditure %>% select(-any_of("country")),  by = c("iso_code", "year")) %>%
+  left_join(income %>% select(-any_of("country")),         by = c("iso_code", "year")) %>%
+  # Drop bound if it exists
+  select(-any_of("bound")) %>%
+  # This removes a row ONLY if ALL THREE are missing at the same time
+  filter(!(is.na(wash_access) & is.na(health_exp_perc_ppp) & is.na(gdp_percapita)))
+
+# Convert country names to UTF-8 encoding to handle special characters
+# iconv() converts character vectors between encodings
+# 'from = ""' uses the current locale's encoding
+# 'to = "UTF-8"' specifies target encoding
+# 'sub = ""' replaces unconvertible characters with empty string
+merged_df2$country <- iconv(merged_df2$country, from = "", to = "UTF-8", sub = "")
+
+# Remove leading/trailing whitespace from country names
+# trimws() eliminates spaces, tabs, newlines at the beginning/end of strings
+merged_df2$country <- trimws(merged_df2$country)
+
+# Convert country column to character type (ensures proper string handling)
+# as.character() explicitly converts to string data type
+merged_df2$country <- as.character(merged_df2$country)
+
+# 1. Define your exact target variables
+target_vars <- c("mortality_r", "dpt_coverage", "wash_access", 
+                 "gdp_percapita", "pop_under_5", "health_exp_perc_ppp")
+
+# 2. Generate the "Problem Only" Table
+failing_variables_audit <- merged_df2 %>%
+  # Group by country to check each one's data health
+  group_by(iso_code, country) %>%
+  summarise(
+    across(all_of(target_vars), ~ mean(is.na(.)) * 100), # Calculate % missing
+    .groups = "drop"
+  ) %>%
+  # Reshape to see each variable on its own row for every country
+  pivot_longer(cols = all_of(target_vars), 
+               names_to = "Indicator", 
+               values_to = "Missing_Percentage") %>%
+  # FILTER: Only show cases that are 50% or above
+  filter(Missing_Percentage >= 50) %>%
+  arrange(country, desc(Missing_Percentage))
+
+# 3. View the Resulting List
+# This will ONLY show you the countries and variables that "fail" the rule.
+print(failing_variables_audit)
+
+# 1. Identify countries that are 100% missing in any variable
+# MICE cannot impute if there is zero data to start with
+critical_failures <- failing_variables_audit %>%
+  filter(Missing_Percentage == 100) %>%
+  distinct(iso_code) %>%
+  pull(iso_code)
+
+# 2. Identify countries failing more than 2 variables
+high_failure_countries <- failing_variables_audit %>%
+  group_by(iso_code) %>%
+  count() %>%
+  filter(n > 2) %>%
+  pull(iso_code)
+high_failure_countries
+
+# 3. Combine and remove
+final_drop_list <- unique(c(critical_failures, high_failure_countries))
+
+merged_df3 <- merged_df2 %>%
+  filter(
+    !iso_code %in% final_drop_list,
+    year >= 2000 & year <= 2022
+  )
+
+
+#Checking the structure of the remaining data
+cat("=== TIER 1 DATA (All Countries) ===\n")
+cat("Dimensions:", dim(merged_df3), "\n")
+cat("Countries:", n_distinct(merged_df3$country), "\n")
+cat("Years range:", min(merged_df3$year), "-", max(merged_df3$year), "\n")
+cat("Variables:", names(merged_df3), "\n")
+```
+**Checking Missingness Patterns**
+Missingness pattern was checked in details using heat maps.
+
+```{r}
+library(VIM)
+
+aggr(merged_df3, prop = FALSE, combined = TRUE, numbers = TRUE, 
+     cex.axis = 0.7, varheight = FALSE, sortVars = TRUE)
+
+# Create a 'Missingness Flag' for the heatmap
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+# 1. Reshape the data to long format
+long_missing <- merged_df3 %>%
+  select(country, year, wash_access, health_exp_perc_ppp, gdp_percapita, dpt_coverage) %>%
+  pivot_longer(cols = c(wash_access, health_exp_perc_ppp, gdp_percapita, dpt_coverage), 
+               names_to = "variable", 
+               values_to = "value") %>%
+  mutate(is_missing = is.na(value))
+
+# 2. Create the Heatmap
+# We use 'facet_grid' to separate variables while keeping countries on the Y-axis
+p <- ggplot(long_missing, aes(x = year, y = country, fill = is_missing)) +
+  geom_tile(color = "white") +
+  facet_wrap(~variable) +  # This creates 3 side-by-side heatmaps
+  scale_fill_manual(values = c("grey90", "red"), 
+                    labels = c("Data Present", "Missing (NA)")) +
+  theme_minimal() +
+  theme(axis.text.y = element_text(size = 7),
+        strip.text = element_text(face = "bold")) + 
+  labs(title = "Detailed Missingness: Country vs. Year vs. Variable",
+       x = "Year", y = "Country")
+p
+# 3. Save as a TALL image to ensure names are readable
+ggsave("Detailed_Variable_Heatmap.png", plot = p, width = 15, height = 25, limitsize = FALSE)
+```
+
+**Checking if missingness is dependent on other variables**
+
+Visual analysis revealed systematic missingness patterns across key variables:
+
+**1. WASH Indicators:**
+
+- Countries with missing WASH data show mortality rate distributions shifted toward substantially higher values (extending toward 300-500 range)
+- Countries with observed WASH data show mortality concentrated at lower values (0-100 range)
+**Pattern:** Missingness strongly associated with worse health outcomes
+
+**2. Health Expenditure:**
+- Different population distributions between observed and missing groups
+- Pattern: Missingness relates to country characteristics, not random
+
+**3. GDP Data:**
+- Missing GDP associated with higher mortality distributions
+- Missing GDP concentrated in earlier years (2000-2010)
+**Pattern:** Dual association with both poor outcomes and historical reporting gaps
+
+**Missingness Mechanism Assessment**
+**MCAR (Missing Completely at Random):** Ruled out due to systematic patterns.
+**MAR (Missing at Random):** Plausible if key predictors are included:
+**mortality_r** for WASH/GDP missingness
+**pop_under_5** for health expenditure missingness year for GDP missingness
+
+**MNAR (Missing Not at Random):** Probable for WASH/GDP given extreme mortality associations.
+
+**Imputation Justification**
+MICE is conditionally justified because:
+- Missingness patterns are explainable by observed variables
+- Including key predictors makes MAR assumption tenable
+```{r}
+library(mice)
+library(lattice) # For vignette-style histograms
+library(dplyr)
+
+# Create indicators: TRUE = Missing, FALSE = Observed
+merged_df3 <- merged_df3 %>%
+  mutate(
+    M_wash   = is.na(wash_access),
+    M_gdp    = is.na(gdp_percapita),
+    M_health = is.na(health_exp_perc_ppp),
+    M_dpt    = is.na(dpt_coverage)
+  )
+
+# A. Check if Mortality predicts missingness in WASH (Target 1)
+p1 <- histogram(~ mortality_r | M_wash, data = merged_df3,
+          main = "Mortality Rate by WASH Missingness",
+          strip = strip.custom(factor.levels = c("WASH Obs", "WASH Miss")))
+
+# B. Check if Mortality predicts missingness in GDP (Target 2)
+p2 <- histogram(~ mortality_r | M_gdp, data = merged_df3,
+          main = "Mortality Rate by GDP Missingness",
+          strip = strip.custom(factor.levels = c("GDP Obs", "GDP Miss")))
+
+# C. Check if Pop Under 5 predicts missingness in Health Exp (Target 3)
+p3 <- histogram(~ pop_under_5 | M_health, data = merged_df3,
+          main = "Pop by Health Exp Missingness",
+          strip = strip.custom(factor.levels = c("Health Obs", "Health Miss")))
+
+p4 <- histogram(~ year | M_wash, data = merged_df3,
+                main = "Year by WASH Missingness",
+                strip = strip.custom(factor.levels = c("WASH Obs", "WASH Miss")))
+
+library(gridExtra)
+
+grid.arrange(p1, p2, p3, p4, ncol = 2)
+```
+**Initial Diagnosis** Missing data was identified as Missing At Random (MAR) because missingness patterns depended on observed variables like Year and Mortality Rate.
+
+**Problem 1:** Impossible Values & Poor Shape: The initial model (2l.pan) produced impossible negative values and failed to replicate the "humps" in the data distribution.
+
+**Change:** Switched to 2l.pmm (Predictive Mean Matching) from the miceadds package.
+
+**Reason:** PMM ensures no negative results by "borrowing" real observed values, which preserves the natural bimodal shape of your data.
+
+**Problem 2:** "Optimistic" Bias: Density plots showed that imputed values for wash_access were too high, missing the lower-access (0–50) hump entirely.
+
+**Change:** Added sdg_region and income_status to the predictor matrix.
+
+**Reason:** These variables provided the necessary economic and geographic "clues" for the model to correctly identify and match missing data to low-access donors.
+
+**Problem 3:** Formula Syntax Errors: The code crashed with "unexpected symbol" errors.
+
+**Change:** Used gsub to replace spaces/hyphens with underscores and converted strings to factors.
+
+**Reason:** R multilevel formulas cannot process special characters or raw strings within factor levels.
+
+**Problem 4:** Numerical Spikes & Scale Warnings: GDP data produced "spiky" distributions (over-smoothing) and scaling warnings due to its high numerical range.
+
+**Change:** Increased iterations to maxit = 30 and integrated categorical anchors.
+
+**Reason:** This stabilized the model, allowing for a diverse spread of imputed values that matched the original distribution despite the large scale.
+
+**Final Result:** Validated the success via stripplots and density plots, confirming that all imputed values are now bounded, realistic, and capture the true bimodal nature of the variables.
+```{r}
+# ============================================================================
+# REVISED MICE PIPELINE (UNSCALED GDP + INCOME STATUS)
+# ============================================================================
+
+# 1. LOAD LIBRARIES ----------------------------------------------------------
+library(mice)
+library(miceadds)  # Essential for 2l.pmm
+library(dplyr)
+library(lattice)
+
+# 2. PREPARE DATA ------------------------------------------------------------
+df_prepared <- merged_df3 %>%
+  filter(!(is.na(wash_access) & is.na(dpt_coverage) & is.na(gdp_percapita))) %>%
+  mutate(
+    iso_code = as.integer(factor(iso_code)), 
+    # CLEAN CATEGORICALS: Critical for formula compatibility
+    sdg_region = as.factor(gsub("[[:space:]|-]", "_", as.character(sdg_region))),
+    income_status = as.factor(gsub("[[:space:]|-]", "_", as.character(income_status))),
+    year = as.numeric(year),
+    time_in_country = year - 2000
+  )
+
+# 3. INITIALIZE MICE ---------------------------------------------------------
+init <- mice(df_prepared, maxit = 0, printFlag = FALSE)
+meth <- init$method
+pred <- init$predictorMatrix
+
+# 4. IMPUTATION METHODS ------------------------------------------------------
+# 2l.pmm prevents negative predictions naturally
+meth["wash_access"] <- "2l.pmm"
+meth["gdp_percapita"] <- "2l.pmm"
+meth["health_exp_perc_ppp"] <- "2l.pmm"
+meth["dpt_coverage"] <- ""        
+meth["sdg_region"] <- "polyreg"
+meth["income_status"] <- "polyreg" 
+
+# 5. PREDICTOR MATRIX --------------------------------------------------------
+pred <- make.predictorMatrix(df_prepared)
+pred[, "country"] <- 0
+
+# Using raw gdp_percapita as requested
+essential_preds <- c("mortality_r", "pop_under_5", "time_in_country", 
+                     "sdg_region", "income_status", "gdp_percapita")
+
+for (var in c("wash_access", "gdp_percapita", "health_exp_perc_ppp")) {
+  pred[var, ] <- 0
+  pred[var, essential_preds] <- 1
+  pred[var, "iso_code"] <- -2     # Set iso_code as the Level-2 cluster
+  pred[var, "dpt_coverage"] <- 1
+}
+
+# 6. RUN IMPUTATION ----------------------------------------------------------
+set.seed(123)
+imp_complete <- mice(
+  df_prepared,
+  m = 10,
+  method = meth,
+  predictorMatrix = pred,
+  maxit = 30, # Increased iterations for better convergence with large scales
+  printFlag = TRUE
+)
+
+# 7. VALIDATION -------------------------------------------------------------
+# Note: Step 9 (pmax/pmin) is deleted. PMM handles bounds.
+densityplot(
+  imp_complete,
+  ~ wash_access + gdp_percapita + health_exp_perc_ppp,
+  layout = c(3, 1),
+  main = "Final Validation: Observed vs Imputed"
+)
+
+# 8. CONVERGENCE (TRACE) PLOTS -----------------------------------------------
+# This creates plots for the mean and SD of each variable across iterations
+plot(imp_complete, 
+     c("wash_access", "gdp_percapita", "health_exp_perc_ppp"),
+     main = "Convergence Check: Mean and SD per Iteration")
+
+# 9. STRIP PLOTS (Another way to see Imputation numbers) ----------------------
+# This plots the raw imputed values side-by-side for each imputation dataset
+stripplot(
+  imp_complete, 
+  wash_access + gdp_percapita + health_exp_perc_ppp ~ .imp, 
+  pch = 20, 
+  cex = 0.5,
+  main = "Individual Imputed Values by Imputation Number"
+)
+
+# View the first imputed dataset (m = 1)
+data_final <- complete(imp_complete, 1)
+write.csv(data_imputed_1, "final_imputed.csv")
+# 10. SAVE OUTPUT ------------------------------------------------------------
+saveRDS(imp_complete, "imputed_data_unscaled.rds")
+```
+**Regression Analysis of the Final Panel Data with Imputed Values**
+**Analysis Process and Model Selection**
+The study utilizes a 22-year panel dataset of 122 countries to examine the factors that determine under-five mortality. The analysis focuses on the relationship between child survival (ln_mort: the natural log of the child mortality rate, used to measure percentage changes rather than raw unit drops) and its primary drivers: financial investment (ln_spend: the natural log of health spending per person in PPP dollars, representing the total volume of resources), infrastructure access (wash_access: the percentage of the population with basic water and sanitation services), and preventive healthcare (dpt_coverage: the percentage of children receiving the DPT vaccine as a measure of how well primary clinics reach the population). Income Status (World Bank income groups) is used as the proxy for structural maturity, representing the permanent foundations of a health system, such as trained staff and stable supply chains.
+
+All money and mortality variables were log-transformed to measure elasticities, which allow the results to show the percentage change in survival for every 1% increase in spending. While Quantile Regression is naturally robust to skewed data, these transformations were still applied to stabilize variance across the 122 countries and to linearize the relationship between spending and health, ensuring mathematical accuracy. To ensure a rigorous model selection, a three-stage econometric hierarchy was followed. First, an F-test confirmed that country-specific characteristics must be accounted for. Second, the Hausman Test yielded a highly significant p-value (6.472e-06), rejecting the Random Effects model in favor of Fixed Effects. Finally, Panel Quantile Regression with bootstrapped standard errors was selected as the main analytical tool. This approach accounts for heteroscedasticity (uneven noise in the data) by re-sampling the data thousands of times to provide reliable, "criticism-proof" p-values.
+
+**Key Findings**
+Foundations of Survival and Systemic Pillars The results confirm that saving children's lives depends on both funding and the underlying strength of the system. A 10% increase in health spending (ln_spend) is linked to a 4.65% reduction in child mortality (ln_mort) for the baseline group. Furthermore, basic infrastructure and preventive care show universal success across the entire dataset: every 1% increase in WASH access and vaccination (DPT) coverage leads to a mortality drop of 1.17% and 0.97%, respectively. These findings prove that while money is essential, it must be supported by a solid foundation of basic services to be effective.
+
+The Efficiency Gap and Structural Maturity The analysis provides clear evidence of an Efficiency Gap (the difference in how much "result" a country gets from its health dollars) based on its level of structural maturity. In countries with the highest death rates (the 90th quantile), health spending in Low-Income settings is far less effective; a positive interaction value (ln_spend : income_status) of +0.442 almost completely cancels out the benefit of the spending. This suggests that in systems with low structural maturity, health funding often hits "bottlenecks" that prevent it from saving lives. However, as countries improve and mortality rates fall (the 10th quantile), this gap disappears (-0.001), showing that health spending becomes significantly more efficient as the structural maturity of the health system increases.
+
+**Limitations of the findings**
+While the methodology is rigorous, the study is subject to several important limitations that must be acknowledged for a balanced interpretation. First, the potential for residual confounding exists, as the model cannot account for all unobserved factors such as political stability, the quality of institutional governance, or maternal education levels, which likely influence both health investment and child survival. Second, while Quantile Regression with bootstrapping was utilized to mitigate data noise and heteroskedasticity, the inherent reporting gaps and potential measurement errors in low-income country data may still affect the precision of the estimated Efficiency Gap. Finally, as this is an observational study of 122 countries, these findings represent strong statistical associations rather than absolute causal claims, particularly since the relationship between spending and mortality can be bi-directional in high-burden settings.
+
+```{r}
+
+library(plm)      # Panel diagnostic tests
+library(quantreg) # Quantile analysis
+library(car)      # VIF/Diagnostics
+library(tidyverse)# Data manipulation
+
+# 1. PRELIMINARY: Income-Group Table
+income_table <- data_final %>%
+  group_by(income_status) %>%
+  summarise(across(c(mortality_r, health_exp_perc_ppp, wash_access, dpt_coverage), 
+                   ~mean(.x, na.rm = TRUE)))
+
+# 2. LOG TRANSFORMATION
+data_final$ln_mort <- log(data_final$mortality_r)
+data_final$ln_spend <- log(data_final$health_exp_perc_ppp)
+
+# 3. SELECTION TESTS (OLS-BASED)
+# pdata setup
+p_data <- pdata.frame(data_final, index = c("country", "year"))
+formula_main <- ln_mort ~ ln_spend * income_status + wash_access + dpt_coverage
+
+pooled <- plm(formula_main, data = p_data, model = "pooling")
+fixed  <- plm(formula_main, data = p_data, model = "within")
+random <- plm(formula_main, data = p_data, model = "random")
+
+# THE HAUSMAN TEST: Deciding the model structure
+phtest(fixed, random) 
+
+# 4. FINAL ESTIMATION: Quantile Regression
+# We analyze 10th (Mature), 50th (Median), and 90th (High Mortality) quantiles
+final_model <- rq(ln_mort ~ ln_spend * income_status + wash_access + dpt_coverage, 
+                  tau = c(0.1, 0.5, 0.9), data = p_data)
+
+# Summary with Bootstrapped SE (handles 22-year panel autocorrelation)
+summary(final_model, se = "boot")
+```
+
+
+```{r}
+# Check the correlation between your independent variables
+# A high number (e.g., > 0.7) suggests Multicollinearity
+cor(main_data_final[, c("wash_access", "gdp_percapita", "dpt_coverage", "health_exp_perc_gdp")])
+```
+
+
+```{r}
+# Null Hypothesis: Pooled OLS is better
+# Alternative: Fixed Effects is better
+pFtest(fixed, pooled)
+```
+
 
