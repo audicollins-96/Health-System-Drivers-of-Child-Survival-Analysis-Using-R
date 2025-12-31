@@ -26,7 +26,7 @@ Conversely, present evidence suggests that preventing mortality has evolved from
 
 This project investigates these determinants of child survival through a quantitative analysis of cross national data, guided by two core research questions:
 
-**Question**: To what extent do national income, government health spending, and preventive/infrastructural factors explain variations in child mortality, and does the effect of health spending vary by a country's income status, used as a proxy for structural health system maturity?
+**Question**: To what extent does health system structural maturity (proxied by income status) moderate the impact of domestic health expenditure on child survival, and do these 'efficiency' gains outweigh the impact of specific vertical interventions like immunization?
 
 While high income status of countries may not automatically guarantee better access to healthcare as indicated above, it does have better health system stability at baseline. Hence, income status is utilized in this study as a proxy for health system stability and horizontal infrastructure required to for sustainable survival outcomes.
    
