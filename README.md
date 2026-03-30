@@ -88,4 +88,3 @@ I explored the **Preston Curve** using an **Animated Bubble Chart (Plotly)**.
 3. **Drivers:** My analysis shows immunization coverage and WASH infrastructure remain the most critical drivers of child survival.
 4. **Conclusion:** I concluded that GDP growth alone is insufficient without targeted, strategic health system investment.
 
-![Regression Results](path/to/image.png)
