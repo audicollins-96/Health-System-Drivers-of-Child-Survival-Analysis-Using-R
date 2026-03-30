@@ -70,8 +70,9 @@ I explored the **Preston Curve** using an **Animated Bubble Chart (Plotly)**.
 * **Imputation:** I used **MICE (2l.pmm)** with predictors including mortality, population, income status, and region.
 * **Validation:** My density plots and convergence checks confirmed realistic and bounded imputations.
 
-![Missing Data Heatmap](path/to/image.png)
-![Imputation Validation](path/to/image.png)
+<img width="891" height="550" alt="image" src="https://github.com/user-attachments/assets/e582c47d-5c5e-4993-9ad5-89efc2bbf1e5" />
+<img width="891" height="550" alt="image" src="https://github.com/user-attachments/assets/4513478c-8d3d-4501-aedc-731ae1fd1819" />
+<img width="891" height="550" alt="image" src="https://github.com/user-attachments/assets/b76a8ae0-464a-4b64-8aab-53a37a05be15" />
 
 ---
 
