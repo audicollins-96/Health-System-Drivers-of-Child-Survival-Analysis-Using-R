@@ -1,137 +1,96 @@
-Economic Growth and Health System Factors in Global Child Mortality
+# **Economic Growth and Health System Factors in Global Child Mortality**
 
-Author: Collins Audi
-Date: 2025-12-04
+**Author:** Collins Audi  
+**Date:** 2025-12-04  
 
-Background and Purpose
+---
 
-Reducing child mortality before the fifth birthday is a core target of Sustainable Development Goal 3 (Health and Well-being) and is a key indicator of a country’s Human Development Index (HDI). Historically, the Preston Curve showed a strong correlation between per capita income and under-5 mortality: higher income → lower child deaths.
+### **Background and Purpose**
 
-Globally, under-5 mortality decreased from 94 per 1,000 live births in 1990 to 37 per 1,000 in 2023, driven by economic growth and health programs (World Bank, 2023).
+Reducing child mortality before the fifth birthday is a core target of **Sustainable Development Goal 3** (Health and Well-being) and a key indicator of a country’s **Human Development Index (HDI)**. Historically, the **Preston Curve** showed a strong correlation between per capita income and under-5 mortality: higher income → lower child deaths.
 
-However, studies suggest that economic growth alone is insufficient without strategic healthcare investment. Countries with similar income levels can have divergent child survival outcomes, influenced by health system equity, access, and quality (Houweling et al., 2005; Victoria, 2003).
+Globally, under-5 mortality decreased from 94 per 1,000 live births in 1990 to 37 per 1,000 in 2023, driven by economic growth and health programs (World Bank, 2023). However, studies suggest that economic growth alone is insufficient without strategic healthcare investment. Countries with similar income levels can have divergent child survival outcomes, influenced by health system equity, access, and quality.
 
-Modern evidence emphasizes healthcare quality as a determinant of child survival, highlighting the importance of Universal Health Coverage (UHC) and health system infrastructure (Kruk et al., 2018; WHO, 2023).
+---
 
-Research Question:
+### **Research Question**
 
 To what extent does health system structural maturity (proxied by income status) moderate the impact of domestic health expenditure on child survival, and do these efficiency gains outweigh vertical interventions like immunization?
 
-Key Variables (per country, 2000–2022):
+---
 
-Under-5 mortality rate
-Access to water and sanitation (WASH)
-Healthcare expenditure (% of GDP)
-GDP per capita (PPP-adjusted)
-Under-5 population size
+### **Key Variables (2000–2022)**
 
-Data Sources:
+* **Under-5 Mortality Rate:** Primary outcome variable.
+* **Access to Water and Sanitation (WASH):** Infrastructure indicator.
+* **Healthcare Expenditure:** Measured as a % of GDP.
+* **GDP per Capita:** PPP-adjusted economic status.
+* **Under-5 Population Size:** Demographic weight.
 
-Our World in Data
-UNICEF
-World Bank
-Step 1: Data Importing, Cleaning, and Preparation
-Phase 1: Mortality Data
+**Data Sources:** Our World in Data, UNICEF, and The World Bank.
 
-Steps for preparing UNICEF under-5 mortality data:
+---
 
-Importing the Data: Load the raw CSV and clean column names.
-Selecting Median Estimates: Keep the most likely values for mortality.
-Reshaping: Pivot data from wide → long format for easier analysis.
+### **Step 1: Data Importing, Cleaning, and Preparation**
 
-Result: A tidy dataset with a yearly mortality timeline per country.
+#### **Phase 1: Mortality Data**
+1.  **Importing:** Loaded raw UNICEF CSV and cleaned column names.
+2.  **Selecting:** Kept median estimates for mortality values.
+3.  **Reshaping:** Pivoted data from wide to long format for time-series analysis.
 
-Insert Image Placeholder for Mortality Data Cleaning:
 ![Mortality Data Cleaning](path/to/image.png)
 
-Phase 2: Health and Economic Indicators
+#### **Phase 2: Health and Economic Indicators**
+We aligned the following datasets by country and year:
+* Immunization (DPT coverage)
+* Healthcare Expenditure (% of GDP)
+* GDP per capita and WASH Access
+* Country Income Status
 
-Imported and cleaned datasets:
-
-Immunization (DPT coverage)
-Healthcare Expenditure (% of GDP)
-GDP per capita
-WASH Access
-Under-5 Population
-Country Income Status
-
-Steps:
-
-Round numeric values for readability
-Align data by country and year for merging
-
-Insert Image Placeholder for Dataset Overview:
 ![Data Overview](path/to/image.png)
 
-Phase 3: Data Merging and Audit
+#### **Phase 3: Data Merging and Audit**
+* Merged datasets using `iso_code` + `year`.
+* Removed duplicates and incomplete rows.
+* **Output:** `merged_data.csv` covering 186 countries.
 
-Process:
-
-Merge datasets using iso_code + year
-Remove duplicates and incomplete rows
-Audit coverage: 177 countries have full 2000–2022 data; 9 partial
-
-Output: merged_data.csv with 186 countries, ready for analysis.
-
-Insert Image Placeholder for Merged Data Audit:
 ![Merged Data Audit](path/to/image.png)
 
-Step 2: Visualizing Under-5 Mortality vs GDP (Preston Curve)
+---
 
-Objective: Explore the relationship between GDP per capita and under-5 mortality over time.
+### **Step 2: Visualizing Under-5 Mortality vs GDP**
 
-Method:
+We explored the **Preston Curve** using an **Animated Bubble Chart (Plotly)**.
+* **Bubble Size:** Under-5 population.
+* **Color:** SDG region.
+* **Key Insight:** We observed a strong negative correlation between GDP and mortality. Small wealth gains in low-income countries lead to the largest mortality reductions.
 
-Animated bubble chart (Plotly)
-Bubble size = Under-5 population
-Color = SDG region
-Logarithmic axes for GDP and mortality
-
-Key Insights:
-
-Strong negative correlation between GDP and mortality
-Logarithmic pattern: small wealth gains in low-income countries → large mortality reductions
-Large populations in low-income countries (e.g., India, Bangladesh) carry a disproportionate mortality burden
-
-Insert Image Placeholder for Animated Bubble Chart:
 ![Preston Curve Animation](path/to/image.gif)
 
-Step 3: Handling Missing Data
+---
 
-Approach:
+### **Step 3: Handling Missing Data**
 
-Missingness patterns visualized via heatmaps
-WASH, GDP, and health expenditure missingness associated with higher mortality
-Missingness identified as MAR (Missing at Random)
-Imputed using MICE (2l.pmm) with predictor variables including mortality, population, income status, and region
+* **Pattern Analysis:** Visualized via heatmaps; missingness was associated with higher mortality.
+* **Classification:** Identified as **Missing at Random (MAR)**.
+* **Imputation:** Used **MICE (2l.pmm)** with predictors including mortality, population, income status, and region.
+* **Validation:** Density plots and convergence checks confirmed realistic and bounded imputations.
 
-Insert Image Placeholder for Missing Data Heatmap:
 ![Missing Data Heatmap](path/to/image.png)
-
-Step 4: Imputation Validation
-Density plots, strip plots, and convergence checks confirm realistic and bounded imputations
-Final dataset (final_imputed.csv) ready for regression analysis
-
-Insert Image Placeholder for Imputation Validation Plots:
 ![Imputation Validation](path/to/image.png)
 
-Step 5: Regression Analysis
+---
 
-Modeling Approach:
+### **Step 4: Regression Analysis**
 
-Panel dataset: 122 countries, 2000–2022
-Outcome: log under-5 mortality
-Predictors: log health spending, WASH access, DPT coverage
-Income status = proxy for health system structural maturity
-Median Quantile Regression with bootstrapped errors
-Fixed effects for country-level characteristics
+**Modeling Approach:**
+* **Panel Dataset:** 122 countries (2000–2022).
+* **Method:** Median Quantile Regression with bootstrapped errors and fixed effects.
 
-Key Findings:
+#### **Key Findings**
+1.  **Efficiency:** Health spending is significantly more efficient in high-income countries.
+2.  **System Penalty:** Low-income countries face an efficiency penalty due to weaker health system maturity.
+3.  **Drivers:** Immunization coverage and WASH infrastructure remain the most critical drivers of child survival.
+4.  **Conclusion:** GDP growth alone is insufficient without targeted, strategic health system investment.
 
-Spending is more efficient in high-income countries
-Low-income countries face an efficiency penalty due to weaker health systems
-Immunization coverage and infrastructure are critical drivers of child survival
-GDP alone is insufficient without strategic health system investment
-
-Insert Image Placeholder for Regression Results:
 ![Regression Results](path/to/image.png)
