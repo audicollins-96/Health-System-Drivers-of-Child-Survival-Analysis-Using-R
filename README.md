@@ -4,7 +4,6 @@
 **Date:** 2025-12-04  
 
 ---
-
 ### **Background and Purpose**
 
 Reducing child mortality before the fifth birthday is a core target of **Sustainable Development Goal 3** (Health and Well-being) and a key indicator of a country’s **Human Development Index (HDI)**. Historically, the **Preston Curve** showed a strong correlation between per capita income and under-5 mortality: higher income → lower child deaths.
@@ -34,47 +33,42 @@ To what extent does health system structural maturity (proxied by income status)
 ### **Step 1: Data Importing, Cleaning, and Preparation**
 
 #### **Phase 1: Mortality Data**
-1.  **Importing:** Loaded raw UNICEF CSV and cleaned column names.
-2.  **Selecting:** Kept median estimates for mortality values.
-3.  **Reshaping:** Pivoted data from wide to long format for time-series analysis.
-
-![Mortality Data Cleaning](path/to/image.png)
+1. **Importing:** I loaded the raw UNICEF CSV and cleaned column names.
+2. **Selecting:** I kept median estimates for mortality values.
+3. **Reshaping:** I pivoted data from wide to long format for time-series analysis.
 
 #### **Phase 2: Health and Economic Indicators**
-We aligned the following datasets by country and year:
+I aligned the following datasets by country and year:
 * Immunization (DPT coverage)
 * Healthcare Expenditure (% of GDP)
 * GDP per capita and WASH Access
 * Country Income Status
 
-![Data Overview](path/to/image.png)
-
 #### **Phase 3: Data Merging and Audit**
-* Merged datasets using `iso_code` + `year`.
-* Removed duplicates and incomplete rows.
+* I merged datasets using `iso_code` + `year`.
+* I removed duplicates and incomplete rows.
 * **Output:** `merged_data.csv` covering 186 countries.
-
-![Merged Data Audit](path/to/image.png)
 
 ---
 
 ### **Step 2: Visualizing Under-5 Mortality vs GDP**
 
-We explored the **Preston Curve** using an **Animated Bubble Chart (Plotly)**.
+I explored the **Preston Curve** using an **Animated Bubble Chart (Plotly)**.
 * **Bubble Size:** Under-5 population.
 * **Color:** SDG region.
-* **Key Insight:** We observed a strong negative correlation between GDP and mortality. Small wealth gains in low-income countries lead to the largest mortality reductions.
+* **Key Insight:** I observed a strong negative correlation between GDP and mortality. Small wealth gains in low-income countries lead to the largest mortality reductions.
 
-![Preston Curve Animation](path/to/image.gif)
+<img width="952" height="476" alt="image" src="https://github.com/user-attachments/assets/e9b1122c-f30d-46f2-861e-e26a52e9fffe" />
+
 
 ---
 
 ### **Step 3: Handling Missing Data**
 
-* **Pattern Analysis:** Visualized via heatmaps; missingness was associated with higher mortality.
-* **Classification:** Identified as **Missing at Random (MAR)**.
-* **Imputation:** Used **MICE (2l.pmm)** with predictors including mortality, population, income status, and region.
-* **Validation:** Density plots and convergence checks confirmed realistic and bounded imputations.
+* **Pattern Analysis:** I visualized missingness via heatmaps; it was associated with higher mortality.
+* **Classification:** I identified the data as **Missing at Random (MAR)**.
+* **Imputation:** I used **MICE (2l.pmm)** with predictors including mortality, population, income status, and region.
+* **Validation:** My density plots and convergence checks confirmed realistic and bounded imputations.
 
 ![Missing Data Heatmap](path/to/image.png)
 ![Imputation Validation](path/to/image.png)
@@ -85,12 +79,12 @@ We explored the **Preston Curve** using an **Animated Bubble Chart (Plotly)**.
 
 **Modeling Approach:**
 * **Panel Dataset:** 122 countries (2000–2022).
-* **Method:** Median Quantile Regression with bootstrapped errors and fixed effects.
+* **Method:** I used Median Quantile Regression with bootstrapped errors and fixed effects.
 
 #### **Key Findings**
-1.  **Efficiency:** Health spending is significantly more efficient in high-income countries.
-2.  **System Penalty:** Low-income countries face an efficiency penalty due to weaker health system maturity.
-3.  **Drivers:** Immunization coverage and WASH infrastructure remain the most critical drivers of child survival.
-4.  **Conclusion:** GDP growth alone is insufficient without targeted, strategic health system investment.
+1. **Efficiency:** I found that health spending is significantly more efficient in high-income countries.
+2. **System Penalty:** I identified that low-income countries face an efficiency penalty due to weaker health system maturity.
+3. **Drivers:** My analysis shows immunization coverage and WASH infrastructure remain the most critical drivers of child survival.
+4. **Conclusion:** I concluded that GDP growth alone is insufficient without targeted, strategic health system investment.
 
 ![Regression Results](path/to/image.png)
